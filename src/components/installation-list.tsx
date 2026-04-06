@@ -29,6 +29,7 @@ type Task = {
   lacre: string
   portas_livres: string
   equipamento: string
+  observacoes?: string
   mk_solutions: 'pendente' | 'finalizado'
   geosite: 'pendente' | 'finalizado'
   mapeamento: 'pendente' | 'finalizado'
@@ -93,7 +94,8 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
         cto: editingTask.cto,
         lacre: editingTask.lacre,
         portas_livres: editingTask.portas_livres,
-        equipamento: editingTask.equipamento
+        equipamento: editingTask.equipamento,
+        observacoes: editingTask.observacoes
       })
       .eq('id', editingTask.id)
 
@@ -160,6 +162,14 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
             <span>Portas: {task.portas_livres || '-'}</span>
           </div>
         </div>
+
+        {/* Observações */}
+        {task.observacoes && (
+          <div className="flex flex-col gap-1 bg-white/5 p-3 rounded-xl border border-white/5">
+            <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-bold">Observações</p>
+            <p className="text-xs text-[#a1a1aa] whitespace-pre-wrap leading-relaxed">{task.observacoes}</p>
+          </div>
+        )}
 
         {/* Checklist */}
         <div className="space-y-2 mt-2">
@@ -335,6 +345,17 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
                 className="todo-input px-3 py-2 rounded-xl text-sm"
               />
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-bold">Observações</label>
+            <textarea
+              rows={3}
+              value={editingTask?.observacoes || ''}
+              onChange={(e) => setEditingTask({...editingTask!, observacoes: e.target.value})}
+              className="todo-input px-3 py-2 rounded-xl text-sm resize-none"
+              placeholder="Descreva observações adicionais..."
+            />
           </div>
           
           <div className="flex gap-3 mt-2">

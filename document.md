@@ -127,6 +127,18 @@ with check (true);
   - Função de Logout: Integrada à barra lateral para encerrar a sessão com segurança.
   - Gerenciamento de Administrador: Controle inicial centralizado no Supabase Auth.
 
+- **Atualização do Formulário de Instalação**:
+  - Adicionado novo campo **Observações** (textarea) ao formulário de Nova Instalação.
+  - Atualizada a tabela `tasks` no Supabase com a coluna `observacoes`.
+  - **Exibição Dinâmica**: As observações agora aparecem nos cards de tarefas pendentes e finalizadas se o campo não estiver vazio.
+  - **Edição Completa**: Implementado suporte para editar as observações através do modal de edição de tarefas.
+  - Implementada a persistência e limpeza automática do campo após o cadastro.
+
+- **Atualização da Retirada de Lacre**:
+  - Adicionado novo protocolo de checklist: **Planilha**.
+  - Atualizado formulário de cadastro para inicializar o status da planilha como pendente.
+  - Atualizada a lógica de auto-conclusão: agora a tarefa só é arquivada quando os 4 protocolos (Mk Solutions, Mapeamento, Geosite e Planilha) forem finalizados.
+
 - **Status Final**: Sistema Profissional de Gestão Técnica completo, seguro e com exportação de dados.
 
 

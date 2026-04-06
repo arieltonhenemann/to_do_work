@@ -33,6 +33,7 @@ type Task = {
   mk_solutions: 'pendente' | 'finalizado'
   mapeamento: 'pendente' | 'finalizado'
   geosite: 'pendente' | 'finalizado'
+  planilha: 'pendente' | 'finalizado'
   status: 'pendente' | 'finalizado'
 }
 
@@ -47,7 +48,7 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
     const currentValue = task[field as keyof Task]
     const newValue = currentValue === 'pendente' ? 'finalizado' : 'pendente'
     
-    const checklistFields = ['mk_solutions', 'mapeamento', 'geosite']
+    const checklistFields = ['mk_solutions', 'mapeamento', 'geosite', 'planilha']
     const updatedValues = { ...task, [field]: newValue }
     const allFinished = checklistFields.every(f => updatedValues[f as keyof Task] === 'finalizado')
     const newOverallStatus = allFinished ? 'finalizado' : 'pendente'
@@ -206,7 +207,8 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
             {[
               { id: 'mk_solutions', label: 'Mk Sol.' },
               { id: 'mapeamento', label: 'Mapeam.' },
-              { id: 'geosite', label: 'Geosite' }
+              { id: 'geosite', label: 'Geosite' },
+              { id: 'planilha', label: 'Planilha' }
             ].map((item) => (
               <button
                 key={item.id}

@@ -12,7 +12,8 @@ export default function InstallationForm({ onTaskAdded }: { onTaskAdded: () => v
     cliente: '',
     lacre: '',
     portas_livres: '',
-    equipamento: ''
+    equipamento: '',
+    observacoes: ''
   })
 
   const supabase = createClient()
@@ -44,7 +45,8 @@ export default function InstallationForm({ onTaskAdded }: { onTaskAdded: () => v
         cliente: '',
         lacre: '',
         portas_livres: '',
-        equipamento: ''
+        equipamento: '',
+        observacoes: ''
       })
       onTaskAdded()
     }
@@ -124,6 +126,17 @@ export default function InstallationForm({ onTaskAdded }: { onTaskAdded: () => v
             onChange={(e) => setFormData({ ...formData, equipamento: e.target.value })}
             className="todo-input px-4 py-2.5 rounded-xl text-sm"
             placeholder="Modelo/Série"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5 md:col-span-2 lg:col-span-3">
+          <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-bold ml-1">Observações</label>
+          <textarea
+            rows={3}
+            value={formData.observacoes}
+            onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+            className="todo-input px-4 py-2.5 rounded-xl text-sm resize-none"
+            placeholder="Anotações adicionais da instalação..."
           />
         </div>
 

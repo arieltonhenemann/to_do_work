@@ -45,6 +45,7 @@ export default function SealRemovalForm({ onTaskAdded }: { onTaskAdded: () => vo
         mk_solutions: 'pendente',
         mapeamento: 'pendente',
         geosite: 'pendente',
+        planilha: 'pendente',
         status: 'pendente'
       }
     ])
