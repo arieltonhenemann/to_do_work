@@ -139,7 +139,13 @@ with check (true);
   - Atualizado formulário de cadastro para inicializar o status da planilha como pendente.
   - Atualizada a lógica de auto-conclusão: agora a tarefa só é arquivada quando os 4 protocolos (Mk Solutions, Mapeamento, Geosite e Planilha) forem finalizados.
 
-- **Status Final**: Sistema Profissional de Gestão Técnica completo, seguro e com exportação de dados.
+- **Correção de Link no Dashboard**:
+  - Corrigido erro 404 ao clicar em "Ver Detalhes" na categoria de Solicitações.
+  - O sistema estava gerando o link como `/solicitacao` (singular), mas a rota correta é `/solicitacoes` (plural).
+  - Implementada a utilização da propriedade dinâmica `path` das categorias para garantir rotas sempre válidas.
+
+### Status Final
+- Sistema Profissional de Gestão Técnica completo, seguro, com exportação de dados e navegação corrigida.
 
 
 

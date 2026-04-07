@@ -161,7 +161,7 @@ export default async function Dashboard() {
                           <div className="h-px bg-white/5 w-full" />
                           <div className="flex justify-between items-center">
                             <Link 
-                              href={`/${task.type.replace('_', '-')}`} 
+                              href={type.path} 
                               className="text-[11px] uppercase tracking-[0.2em] font-black text-white flex items-center gap-2 hover:gap-3 transition-all"
                             >
                               Ver Detalhes <ArrowRight className="w-3.5 h-3.5" />
