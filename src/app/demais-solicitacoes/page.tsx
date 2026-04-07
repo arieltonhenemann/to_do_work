@@ -31,25 +31,17 @@ export default function OtherSolicitationPage() {
   }, [fetchTasks])
 
   return (
-    <div className="flex flex-col gap-10 max-w-7xl mx-auto animate-in fade-in duration-1000">
-      <div className="flex flex-col gap-4 border-b border-white/5 pb-10">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-white/5 rounded-3xl border border-white/10 shadow-2xl relative group">
-            <ExternalLink className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-500" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse shadow-lg shadow-blue-500/50" />
+    <div className="flex flex-col gap-8 max-w-7xl mx-auto animate-in fade-in duration-700">
+      <div className="flex flex-col gap-2 border-b border-white/5 pb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-500 rounded-lg shadow-lg shadow-blue-500/20">
+            <ExternalLink className="w-6 h-6 text-white" />
           </div>
-          <div className="flex flex-col">
-            <h1 className="text-5xl font-black tracking-tighter text-white uppercase italic">
-              Demais Solicitações
-            </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Target className="w-3.5 h-3.5 text-blue-400" />
-              <p className="text-[#52525b] text-[10px] font-black uppercase tracking-[.3em]">
-                Módulo de Gestão de Demandas Gerais
-              </p>
-            </div>
-          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-white">Demais Solicitações</h1>
         </div>
+        <p className="text-[#a1a1aa] text-sm max-w-2xl ml-1">
+          Gerenciamento de demandas gerais e solicitações diversas que não se enquadram nas categorias técnicas principais.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-16">

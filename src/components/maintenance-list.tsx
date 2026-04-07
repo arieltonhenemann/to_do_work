@@ -12,7 +12,12 @@ import {
   Briefcase,
   Pencil,
   AlertCircle,
-  Loader2
+  Loader2,
+  Hexagon,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  X
 } from 'lucide-react'
 import Modal from './modal'
 
@@ -34,7 +39,13 @@ export default function MaintenanceList({ tasks, onUpdate }: { tasks: Task[], on
   
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const toggleExpand = (taskId: string) => {
+    setExpandedTaskId(expandedTaskId === taskId ? null : taskId)
+  }
 
   const toggleChecklist = async (task: Task, field: string) => {
     const currentValue = task[field as keyof Task]
@@ -95,91 +106,149 @@ export default function MaintenanceList({ tasks, onUpdate }: { tasks: Task[], on
     setLoading(false)
   }
 
-  const pendingTasks = tasks.filter(t => t.status === 'pendente')
-  const finishedTasks = tasks.filter(t => t.status === 'finalizado')
+  const filteredTasks = tasks.filter(t => {
+    const search = searchTerm.toLowerCase()
+    return (
+      t.cliente?.toLowerCase().includes(search) ||
+      t.tecnico?.toLowerCase().includes(search) ||
+      t.equipamento?.toLowerCase().includes(search)
+    )
+  })
 
-  const renderTaskCard = (task: Task) => (
-    <div key={task.id} className="relative glass-card-lite p-6 rounded-2xl border border-white/5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-lg font-bold text-white mb-1">{task.cliente}</h3>
-            <div className="flex items-center gap-2 text-xs text-[#a1a1aa]">
-              <User className="w-3 h-3" />
-              <span>Técnico: {task.tecnico}</span>
+  const pendingTasks = filteredTasks.filter(t => t.status === 'pendente')
+  const finishedTasks = filteredTasks.filter(t => t.status === 'finalizado')
+
+  const renderTaskCard = (task: Task) => {
+    const isExpanded = expandedTaskId === task.id
+
+    return (
+      <div 
+        key={task.id} 
+        onClick={() => toggleExpand(task.id)}
+        className={`relative glass-card-lite p-6 rounded-[32px] border border-white/5 animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer hover:border-white/10 transition-all ${isExpanded ? 'ring-2 ring-white/5' : ''}`}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-end items-start -mb-2">
+            <div className="flex gap-1.5 shadow-xl shadow-black/20 bg-black/40 p-1.5 rounded-xl border border-white/5">
+              {task.status === 'pendente' && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setEditingTask(task); }}
+                  className="p-2 hover:bg-white/10 text-[#a1a1aa] hover:text-white rounded-lg transition-all"
+                  title="Editar"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
+              <button 
+                onClick={(e) => { e.stopPropagation(); setDeletingId(task.id); }}
+                className="p-2 hover:bg-red-500/10 text-[#52525b] hover:text-red-400 rounded-lg transition-all"
+                title="Excluir"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
-          <div className="flex gap-1.5 shadow-xl shadow-black/20 bg-black/40 p-1.5 rounded-xl border border-white/5">
-            {task.status === 'pendente' && (
-              <button 
-                onClick={() => setEditingTask(task)}
-                className="p-2 hover:bg-white/10 text-[#a1a1aa] hover:text-white rounded-lg transition-all"
-                title="Editar"
-              >
-                <Pencil className="w-4 h-4" />
-              </button>
+
+          <div className="grid grid-cols-2 gap-3 mt-1">
+            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
+              <Hexagon className="w-3.5 h-3.5 text-white/40" />
+              <span className="font-medium truncate text-white">ID: {task.cliente}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
+              <User className="w-3.5 h-3.5 text-white/40" />
+              <span className="font-medium truncate">Técnico: {task.tecnico}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
+              <Briefcase className="w-3.5 h-3.5 text-white/40" />
+              <span className="font-medium truncate">Tipo: {task.tipo_manutencao || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
+              <Package className="w-3.5 h-3.5 text-white/40" />
+              <span className="font-medium truncate text-[#a1a1aa]">Equip: {task.equipamento || '-'}</span>
+            </div>
+          </div>
+
+          {/* Conteúdo Expansível */}
+          {isExpanded ? (
+            <div className="flex flex-col gap-6 pt-4 border-t border-white/5 animate-in slide-in-from-top-2 duration-300">
+              {/* Checklist */}
+              <div className="space-y-3">
+                <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1">Protocolos (Mk & Planilha)</p>
+                <div className="grid grid-cols-1 gap-2.5">
+                  {[
+                    { id: 'mk_solutions', label: 'Mk Solutions' },
+                    { id: 'planilha', label: 'Planilha' }
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={(e) => { e.stopPropagation(); toggleChecklist(task, item.id); }}
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all text-sm group ${
+                        task[item.id as keyof Task] === 'finalizado'
+                          ? 'bg-white/10 border-white/20 text-white'
+                          : 'bg-transparent border-white/5 text-[#52525b] hover:border-white/20 hover:text-[#a1a1aa]'
+                      }`}
+                    >
+                      <span className="font-medium">{item.label}</span>
+                      {task[item.id as keyof Task] === 'finalizado' ? (
+                        <CheckCircle2 className="w-5 h-5 text-amber-500" />
+                      ) : (
+                        <Circle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center pt-2 opacity-20 hover:opacity-100 transition-opacity">
+               <ChevronDown className="w-4 h-4" />
+            </div>
+          )}
+
+          {/* Rodapé: Data/Hora */}
+          <div className="flex items-center justify-between pt-1 border-t border-white/5 opacity-40 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-2">
+              <Clock className="w-3 h-3" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                {new Date(task.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+            {isExpanded && (
+               <div className="flex items-center gap-1 text-[10px] uppercase font-black text-[#52525b]">
+                 RECOLHER <ChevronUp className="w-3 h-3" />
+               </div>
             )}
-            <button 
-              onClick={() => setDeletingId(task.id)}
-              className="p-2 hover:bg-red-500/10 text-[#52525b] hover:text-red-400 rounded-lg transition-all"
-              title="Excluir"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mt-1">
-          <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-2 rounded-lg">
-            <Briefcase className="w-3 h-3" />
-            <span>Tipo: {task.tipo_manutencao || 'N/A'}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-2 rounded-lg">
-            <Package className="w-3 h-3" />
-            <span>Equip: {task.equipamento || '-'}</span>
-          </div>
-        </div>
-
-        <div className="space-y-2 mt-2">
-          <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-bold">Protocolos (Mk & Planilha)</p>
-          <div className="flex flex-col gap-2">
-            {[
-              { id: 'mk_solutions', label: 'Mk Solutions' },
-              { id: 'planilha', label: 'Planilha' }
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => toggleChecklist(task, item.id)}
-                className={`flex items-center justify-between p-3 rounded-xl border transition-all text-sm group ${
-                  task[item.id as keyof Task] === 'finalizado'
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-500'
-                    : 'bg-transparent border-white/5 text-[#52525b] hover:border-white/20 hover:text-[#a1a1aa]'
-                }`}
-              >
-                <span>{item.label}</span>
-                {task[item.id as keyof Task] === 'finalizado' ? (
-                  <CheckCircle2 className="w-4 h-4 text-amber-500" />
-                ) : (
-                  <Circle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Rodapé: Data/Hora */}
-        <div className="flex items-center gap-2 pt-1 border-t border-white/5 opacity-40 group-hover:opacity-100 transition-opacity">
-          <Clock className="w-3 h-3" />
-          <span className="text-[10px] font-bold uppercase tracking-widest">
-            Criado em: {new Date(task.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-          </span>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-12 w-full">
+    <div className="flex flex-col gap-8 w-full mt-8">
+      {/* Barra de Pesquisa */}
+      <div className="relative group max-w-2xl mx-auto w-full">
+        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+          <Search className="w-5 h-5 text-[#52525b] group-focus-within:text-white transition-colors" />
+        </div>
+        <input
+          type="text"
+          placeholder="Pesquisar por ID, Técnico ou Equipamento..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-white/5 border border-white/10 text-white pl-12 pr-12 py-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/10 focus:bg-white/10 transition-all placeholder:text-[#52525b] placeholder:text-sm"
+        />
+        {searchTerm && (
+          <button
+            onClick={() => setSearchTerm('')}
+            className="absolute inset-y-0 right-4 flex items-center text-[#52525b] hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-4 w-full">
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3 px-2">
           <Clock className="w-5 h-5 text-amber-500" />
@@ -189,7 +258,7 @@ export default function MaintenanceList({ tasks, onUpdate }: { tasks: Task[], on
         <div className="flex flex-col gap-6">
           {pendingTasks.length === 0 ? (
             <div className="p-12 text-center border border-dashed border-white/5 rounded-3xl text-[#52525b] text-sm">
-              Tudo limpo! Nenhuma manutenção pendente.
+              {searchTerm ? 'Nenhum resultado encontrado.' : 'Tudo limpo! Nenhuma manutenção pendente.'}
             </div>
           ) : (
             pendingTasks.map(renderTaskCard)
@@ -203,16 +272,17 @@ export default function MaintenanceList({ tasks, onUpdate }: { tasks: Task[], on
           <h2 className="text-xl font-bold">Encerradas</h2>
           <span className="bg-white/10 px-2 py-0.5 rounded-md text-xs">{finishedTasks.length}</span>
         </div>
-        <div className="flex flex-col gap-6 opacity-60">
+        <div className="flex flex-col gap-6 opacity-60 hover:opacity-100 transition-opacity duration-500 text-center">
           {finishedTasks.length === 0 ? (
             <div className="p-12 text-center border border-dashed border-white/5 rounded-3xl text-[#52525b] text-sm">
-              Nenhuma manutenção finalizada.
+              {searchTerm ? 'Nenhum resultado encontrado.' : 'Nenhuma manutenção finalizada.'}
             </div>
           ) : (
             finishedTasks.map(renderTaskCard)
           )}
         </div>
       </div>
+    </div>
 
       {/* Pop-up de Confirmação de Exclusão */}
       <Modal 

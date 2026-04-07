@@ -32,16 +32,15 @@ export default function SealRemovalPage() {
 
   return (
     <div className="flex flex-col gap-8 max-w-7xl mx-auto animate-in fade-in duration-700">
-      <div className="flex flex-col gap-2 border-b border-white/5 pb-8 relative group">
+      <div className="flex flex-col gap-2 border-b border-white/5 pb-8">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-red-500 rounded-2xl shadow-lg shadow-red-500/20 group-hover:scale-110 transition-transform duration-500">
+          <div className="p-2 bg-red-500 rounded-lg shadow-lg shadow-red-500/20">
             <Trash2 className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-4xl font-black tracking-tighter text-white">Retirada de Lacre</h1>
-          <span className="bg-red-500/10 text-red-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-500/10">Controle Dinâmico</span>
+          <h1 className="text-4xl font-bold tracking-tight text-white">Retirada de Lacre</h1>
         </div>
         <p className="text-[#a1a1aa] text-sm max-w-2xl ml-1 font-medium">
-          Módulo especializado para remoção de lacres em massa. Gerencie múltiplos clientes e status de postes em um único lote.
+          Módulo especializado para remoção de lacres em massa e gerenciamento de lotes pendentes.
         </p>
       </div>
 

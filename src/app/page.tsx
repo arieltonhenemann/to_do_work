@@ -9,7 +9,8 @@ import {
   ArrowRight,
   User,
   MapPin,
-  CheckCircle2
+  CheckCircle2,
+  LayoutDashboard
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -40,24 +41,26 @@ export default async function Dashboard() {
 
   return (
     <div className="flex flex-col gap-10 max-w-7xl mx-auto animate-in fade-in duration-700">
-      {/* Header Dashboard */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-10">
-        <div className="flex flex-col gap-2 shadow-2xl">
-          <h1 className="text-5xl font-black tracking-tight text-white group">
-            Dashboard
-          </h1>
-          <p className="text-[#a1a1aa] text-lg max-w-xl font-medium">
-            Visão geral de todas as operações em campo.
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white rounded-lg shadow-lg shadow-white/10">
+              <LayoutDashboard className="w-6 h-6 text-black" />
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight text-white">Dashboard</h1>
+          </div>
+          <p className="text-[#a1a1aa] text-sm max-w-xl font-medium ml-1">
+            Visão geral de todas as operações em campo e controle de pendências.
           </p>
         </div>
         
-        <div className="flex items-center gap-4 bg-white/5 p-5 rounded-3xl border border-white/10 backdrop-blur-xl group hover:border-white/20 transition-all">
-          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-2xl shadow-white/20 group-hover:scale-110 transition-transform">
-            <Clock className="w-6 h-6 text-black" />
+        <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 group hover:border-white/20 transition-all mb-1">
+          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg shadow-white/10 group-hover:scale-110 transition-transform">
+            <Clock className="w-5 h-5 text-black" />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-black">Pendências Totais</p>
-            <p className="text-3xl font-black text-white">{pendingCount}</p>
+            <p className="text-[9px] uppercase tracking-widest text-[#52525b] font-black">Pendências Totais</p>
+            <p className="text-2xl font-black text-white leading-none">{pendingCount}</p>
           </div>
         </div>
       </div>
