@@ -212,6 +212,10 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
                 <span className="text-sm font-medium text-[#a1a1aa] truncate">{task.lacre || '-'}</span>
               </div>
               <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase font-bold text-[#52525b] tracking-widest">Portas</span>
+                <span className="text-sm font-medium text-[#a1a1aa] truncate">{task.portas_livres || '-'}</span>
+              </div>
+              <div className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase font-bold text-[#52525b] tracking-widest">Equipamento</span>
                 <span className="text-sm font-medium text-[#a1a1aa] truncate">{task.equipamento || '-'}</span>
               </div>

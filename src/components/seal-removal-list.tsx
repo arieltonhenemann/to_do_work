@@ -215,10 +215,11 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
                     ? 'bg-emerald-500/5 border-emerald-500/10' 
                     : 'bg-red-500/5 border-red-500/10'
                  }`}>
-                   <div className="flex flex-col">
-                     <span className="text-[11px] font-bold text-white truncate max-w-[120px]">{lacre.cliente}</span>
-                     <span className="text-[9px] text-[#52525b] font-black italic">#{lacre.lacre}</span>
-                   </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-white truncate max-w-[200px]">
+                        Cliente: {lacre.cliente} - Lacre: {lacre.lacre}
+                      </span>
+                    </div>
                    <button 
                      onClick={(e) => { e.stopPropagation(); updateSingleLacre(task, lacre.id, 'toggleStatus'); }}
                      className={`text-[8px] font-black px-2 py-1 rounded-md border transition-all ${
@@ -431,13 +432,13 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
           <div className="bg-[#09090b] p-6 rounded-3xl border border-white/5 max-h-[300px] overflow-y-auto">
              <div className="flex flex-col gap-1 font-mono text-xs text-[#a1a1aa]">
                 {quickInfoTask?.lacres_data.map((l, idx) => (
-                  <div key={l.id}>{idx + 1}. {l.cliente}: {l.lacre}</div>
+                  <div key={l.id}>{idx + 1}. Cliente: {l.cliente} - Lacre: {l.lacre}</div>
                 ))}
              </div>
           </div>
           <button
             onClick={() => {
-              const text = quickInfoTask?.lacres_data.map(l => `${l.cliente}: ${l.lacre}`).join('\n') || ''
+              const text = quickInfoTask?.lacres_data.map(l => `Cliente: ${l.cliente} - Lacre: ${l.lacre}`).join('\n') || ''
               copyToClipboard(text)
             }}
             className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
