@@ -31,33 +31,28 @@ export default function OtherSolicitationPage() {
   }, [fetchTasks])
 
   return (
-    <div className="flex flex-col gap-8 max-w-7xl mx-auto animate-in fade-in duration-700">
+    <div className="flex flex-col gap-8 max-w-7xl mx-auto animate-in fade-in duration-700 min-h-screen">
       <div className="flex flex-col gap-2 border-b border-white/5 pb-8">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-500 rounded-lg shadow-lg shadow-blue-500/20">
-            <ExternalLink className="w-6 h-6 text-white" />
+          <div className="p-2 bg-white rounded-xl shadow-sm border border-white/10">
+            <ExternalLink className="w-6 h-6 text-black" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-white">Demais Solicitações</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight text-white">Demais Solicitações</h1>
         </div>
         <p className="text-[#a1a1aa] text-sm max-w-2xl ml-1">
-          Gerenciamento de demandas gerais e solicitações diversas que não se enquadram nas categorias técnicas principais.
+          Gerenciamento de fluxos gerais e demandas diversas. Organize e acompanhe solicitações que não se enquadram em categorias técnicas específicas.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-16">
+      <div className="grid grid-cols-1 gap-12">
+        {/* Formulário de Cadastro */}
         <OtherSolicitationForm onTaskAdded={fetchTasks} />
 
+        {/* Listagem Separada por Status */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-6">
-            <div className="relative">
-              <Loader2 className="w-12 h-12 animate-spin text-white/5" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full animate-ping" />
-              </div>
-            </div>
-            <p className="text-[10px] text-[#52525b] uppercase tracking-[0.4em] font-black animate-pulse">
-              Carregando Fluxo Geral...
-            </p>
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-white/20" />
+            <p className="text-[#52525b] text-xs uppercase tracking-widest font-bold">Carregando fluxo geral...</p>
           </div>
         ) : (
           <OtherSolicitationList tasks={tasks} onUpdate={fetchTasks} />

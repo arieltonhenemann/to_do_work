@@ -61,102 +61,104 @@ export default function SealRemovalForm({ onTaskAdded }: { onTaskAdded: () => vo
   }
 
   return (
-    <div className="glass-card p-6 rounded-2xl border border-white/5 animate-in fade-in slide-in-from-top-4 duration-500">
+    <div className="bg-[#18181b] p-8 rounded-[32px] border border-white/5 animate-in fade-in slide-in-from-top-4 duration-500 shadow-xl shadow-black/20">
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-xl font-bold flex items-center gap-2 text-white">
-          <Trash2 className="w-5 h-5 text-red-400" />
+        <h2 className="text-xl font-extrabold flex items-center gap-3 text-white">
+          <div className="p-2 bg-white rounded-lg">
+            <Trash2 className="w-5 h-5 text-black" />
+          </div>
           Retirada de Lacres
         </h2>
         
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 text-[10px] text-[#52525b] font-bold uppercase tracking-widest">
-          <Info className="w-3 h-3" />
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 text-[10px] text-[#52525b] font-black uppercase tracking-widest">
+          <Info className="w-3 h-3 text-red-500" />
           Múltiplos Lacres Suportados
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-8">
         {/* Dados Básicos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-bold ml-1">Técnico</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1">Técnico Responsável</label>
             <input
               type="text"
               required
               value={formData.tecnico}
               onChange={(e) => setFormData({ ...formData, tecnico: e.target.value })}
-              className="todo-input px-4 py-2.5 rounded-xl text-sm"
+              className="w-full bg-[#09090b] border border-white/5 text-white px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5 focus:bg-[#18181b] focus:border-white/10 transition-all placeholder:text-[#52525b] text-sm"
               placeholder="Nome do técnico"
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-bold ml-1">CTO</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1">Célula / CTO</label>
             <input
               type="text"
               required
               value={formData.cto}
               onChange={(e) => setFormData({ ...formData, cto: e.target.value })}
-              className="todo-input px-4 py-2.5 rounded-xl text-sm"
-              placeholder="Identificação CTO"
+              className="w-full bg-[#09090b] border border-white/5 text-white px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5 focus:bg-[#18181b] focus:border-white/10 transition-all placeholder:text-[#52525b] text-sm"
+              placeholder="Identificação da CTO"
             />
           </div>
         </div>
 
         {/* Linhas Dinâmicas de Lacres */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between px-1">
-            <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-black">Detalhamento dos Lacres</p>
+            <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-black italic">Detalhamento dos Lacres no Lote</p>
             <button 
               type="button"
               onClick={addLacreRow}
-              className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-black text-white hover:text-white/70 transition-all bg-white/5 px-3 py-1.5 rounded-lg border border-white/5"
+              className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-black text-white hover:bg-white/5 px-4 py-2 rounded-xl border border-white/10 transition-all active:scale-95"
             >
-              <Plus className="w-3 h-3" /> Adicionar Lacre
+              <Plus className="w-4 h-4 text-red-500" /> ADICIONAR LACRE
             </button>
           </div>
 
-          <div className="flex flex-col gap-2">
-            {lacres.map((row, index) => (
+          <div className="flex flex-col gap-3">
+            {lacres.map((row) => (
               <div 
                 key={row.id} 
-                className={`flex flex-col md:flex-row gap-3 p-4 rounded-2xl border transition-all duration-500 ${
+                className={`flex flex-col md:flex-row gap-4 p-5 rounded-[24px] border transition-all duration-500 shadow-lg ${
                   row.status === 'ativo' 
-                    ? 'bg-emerald-500/5 border-emerald-500/20' 
-                    : 'bg-red-500/5 border-red-500/20'
+                    ? 'bg-emerald-500/[0.03] border-emerald-500/20 shadow-emerald-500/5' 
+                    : 'bg-red-500/[0.03] border-red-500/20 shadow-red-500/5'
                 }`}
               >
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold text-[#52525b]">Lacre #</label>
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-4">
+                  <div className="flex flex-col gap-1.5 sm:col-span-3">
+                    <label className="text-[9px] uppercase font-black text-[#52525b] ml-1">Lacre #</label>
                     <input
                       type="text"
                       required
                       value={row.lacre}
                       onChange={(e) => updateLacreRow(row.id, 'lacre', e.target.value)}
-                      className="bg-black/20 border border-white/5 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-white/20"
-                      placeholder="Número"
+                      className="bg-[#09090b]/50 border border-white/5 px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-white/20 transition-all"
+                      placeholder="Nº Lacre"
                     />
                   </div>
-                  <div className="flex-1 flex flex-col gap-1 sm:col-span-1">
-                    <label className="text-[9px] uppercase font-bold text-[#52525b]">Cliente</label>
+                  <div className="flex flex-col gap-1.5 sm:col-span-5">
+                    <label className="text-[9px] uppercase font-black text-[#52525b] ml-1">Cliente Vinculado</label>
                     <input
                       type="text"
                       required
                       value={row.cliente}
                       onChange={(e) => updateLacreRow(row.id, 'cliente', e.target.value)}
-                      className="bg-black/20 border border-white/5 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-white/20"
-                      placeholder="Nome cliente"
+                      className="bg-[#09090b]/50 border border-white/5 px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-white/20 transition-all"
+                      placeholder="Nome do cliente"
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] uppercase font-bold text-[#52525b]">Status Poste</label>
+                  <div className="flex flex-col gap-1.5 sm:col-span-4">
+                    <label className="text-[9px] uppercase font-black text-[#52525b] ml-1">Status Final</label>
                     <div className="flex gap-1 h-full">
                       <button
                         type="button"
                         onClick={() => updateLacreRow(row.id, 'status', 'ativo')}
-                        className={`flex-1 text-[10px] font-black rounded-lg transition-all ${
+                        className={`flex-1 text-[9px] font-black rounded-xl transition-all border ${
                           row.status === 'ativo' 
-                            ? 'bg-emerald-500 text-white' 
-                            : 'bg-white/5 text-[#52525b] opacity-50 hover:opacity-100'
+                            ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20' 
+                            : 'bg-white/5 text-[#52525b] border-transparent hover:border-white/5'
                         }`}
                       >
                         ATIVO
@@ -164,10 +166,10 @@ export default function SealRemovalForm({ onTaskAdded }: { onTaskAdded: () => vo
                       <button
                         type="button"
                         onClick={() => updateLacreRow(row.id, 'status', 'desativado')}
-                        className={`flex-1 text-[10px] font-black rounded-lg transition-all ${
+                        className={`flex-1 text-[9px] font-black rounded-xl transition-all border ${
                           row.status === 'desativado' 
-                            ? 'bg-red-500 text-white' 
-                            : 'bg-white/5 text-[#52525b] opacity-50 hover:opacity-100'
+                            ? 'bg-red-500 text-white border-red-400 shadow-lg shadow-red-500/20' 
+                            : 'bg-white/5 text-[#52525b] border-transparent hover:border-white/5'
                         }`}
                       >
                         DESATIVADO
@@ -180,7 +182,7 @@ export default function SealRemovalForm({ onTaskAdded }: { onTaskAdded: () => vo
                   <button
                     type="button"
                     onClick={() => removeLacreRow(row.id)}
-                    className="self-end md:self-center p-2 text-[#52525b] hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                    className="self-end md:self-center p-3 text-[#52525b] hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -193,9 +195,14 @@ export default function SealRemovalForm({ onTaskAdded }: { onTaskAdded: () => vo
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-red-500 text-white py-4 rounded-2xl font-bold text-sm hover:bg-red-400 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 mt-2 shadow-lg shadow-red-500/10"
+          className="w-full bg-white text-black py-4 rounded-2xl font-bold text-sm hover:bg-[#e4e4e7] transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 mt-2 shadow-xl shadow-white/5"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Finalizar Lotes de Retirada'}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin text-black" /> : (
+            <>
+              <Trash2 className="w-5 h-5" />
+              FINALIZAR LOTE DE RETIRADA
+            </>
+          )}
         </button>
       </form>
     </div>

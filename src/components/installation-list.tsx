@@ -48,17 +48,13 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
   const supabase = createClient()
   
   // Estados para Modais
+  const [statusFilter, setStatusFilter] = useState<'pendente' | 'finalizado'>('pendente')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [infoTask, setInfoTask] = useState<Task | null>(null)
-  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
-
-  const toggleExpand = (taskId: string) => {
-    setExpandedTaskId(expandedTaskId === taskId ? null : taskId)
-  }
 
   const toggleChecklist = async (task: Task, field: string) => {
     const currentValue = task[field as keyof Task]
@@ -77,6 +73,28 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
 
     if (error) {
       console.error('Erro ao atualizar:', error.message)
+    } else {
+      onUpdate()
+    }
+  }
+
+  const finishAllItems = async (task: Task) => {
+    const checklistFields = {
+      mk_solutions: 'finalizado',
+      geosite: 'finalizado',
+      mapeamento: 'finalizado',
+      sincronizacao: 'finalizado',
+      planilha: 'finalizado',
+      status: 'finalizado'
+    }
+
+    const { error } = await supabase
+      .from('tasks')
+      .update(checklistFields)
+      .eq('id', task.id)
+
+    if (error) {
+      console.error('Erro ao finalizar todos:', error.message)
     } else {
       onUpdate()
     }
@@ -129,147 +147,156 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
   }
 
   const filteredTasks = tasks.filter(t => {
-    const search = searchTerm.toLowerCase()
-    return (
-      t.cliente?.toLowerCase().includes(search) ||
-      t.tecnico?.toLowerCase().includes(search) ||
-      t.cto?.toLowerCase().includes(search) ||
-      t.lacre?.toLowerCase().includes(search) ||
-      t.equipamento?.toLowerCase().includes(search)
+    const matchesSearch = searchTerm === '' || (
+      t.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.tecnico?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.cto?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.lacre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.equipamento?.toLowerCase().includes(searchTerm.toLowerCase())
     )
+    const matchesStatus = t.status === statusFilter
+    return matchesSearch && matchesStatus
   })
 
-  const pendingTasks = filteredTasks.filter(t => t.status === 'pendente')
-  const finishedTasks = filteredTasks.filter(t => t.status === 'finalizado')
-
   const renderTaskCard = (task: Task) => {
-    const isExpanded = expandedTaskId === task.id
-
     return (
       <div 
         key={task.id} 
-        onClick={() => toggleExpand(task.id)}
-        className={`relative glass-card-lite p-6 rounded-[32px] border border-white/5 animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer hover:border-white/10 transition-all ${isExpanded ? 'ring-2 ring-white/5' : ''}`}
+        className="group relative bg-[#18181b] rounded-3xl border border-white/5 p-6 transition-all hover:shadow-2xl hover:shadow-black/40 hover:border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-500"
       >
-        <div className="flex flex-col gap-4">
-          {/* Header: Ações (Simplificado) */}
-          <div className="flex justify-end items-start -mb-2">
-            <div className="flex gap-1.5 shadow-xl shadow-black/20 bg-black/40 p-1.5 rounded-xl border border-white/5">
-              <button 
-                onClick={(e) => { e.stopPropagation(); setInfoTask(task); }}
-                className="p-2 hover:bg-white/10 text-[#a1a1aa] hover:text-white rounded-lg transition-all"
-                title="Informações Rápidas"
-              >
-                <Clipboard className="w-4 h-4" />
-              </button>
-              {task.status === 'pendente' && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setEditingTask(task); }}
-                  className="p-2 hover:bg-white/10 text-[#a1a1aa] hover:text-white rounded-lg transition-all"
-                  title="Editar"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-              )}
-              <button 
-                onClick={(e) => { e.stopPropagation(); setDeletingId(task.id); }}
-                className="p-2 hover:bg-red-500/10 text-[#52525b] hover:text-red-400 rounded-lg transition-all"
-                title="Excluir"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Info Grid - 6 Campos Uniformes */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
-              <Hexagon className="w-3.5 h-3.5 text-white/40" />
-              <span className="font-medium truncate text-white">ID: {task.cliente}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
-              <User className="w-3.5 h-3.5 text-white/40" />
-              <span className="font-medium truncate">Técnico: {task.tecnico}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
-              <MapPin className="w-3.5 h-3.5 text-white/40" />
-              <span className="font-medium truncate">CTO: {task.cto || '-'}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
-              <Lock className="w-3.5 h-3.5 text-white/40" />
-              <span className="font-medium truncate">Lacre: {task.lacre || '-'}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
-              <Package className="w-3.5 h-3.5 text-white/40" />
-              <span className="font-medium truncate">Equip: {task.equipamento || '-'}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
-              <ArrowRight className="w-3.5 h-3.5 text-white/40" />
-              <span className="font-medium truncate">Portas: {task.portas_livres || '-'}</span>
-            </div>
-          </div>
-
-          {/* Conteúdo Expansível */}
-          {isExpanded ? (
-            <div className="flex flex-col gap-6 pt-4 border-t border-white/5 animate-in slide-in-from-top-2 duration-300">
-              {/* Observações */}
-              {task.observacoes && (
-                <div className="flex flex-col gap-1 bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1">Observações Técnicas</p>
-                  <p className="text-xs text-[#a1a1aa] whitespace-pre-wrap leading-relaxed">{task.observacoes}</p>
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Lado Esquerdo: Info Principal */}
+          <div className="flex-1 flex flex-col gap-6">
+            {/* Header do Card */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/5 rounded-2xl border border-white/5 group-hover:scale-110 transition-transform">
+                  <Package className="w-6 h-6 text-[#a1a1aa]" />
                 </div>
-              )}
-
-              {/* Checklist */}
-              <div className="space-y-3">
-                <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1">Protocolos e Sistemas</p>
-                <div className="grid grid-cols-1 gap-2.5">
-                  {[
-                    { id: 'mk_solutions', label: 'Mk Solutions' },
-                    { id: 'geosite', label: 'Geosite' },
-                    { id: 'mapeamento', label: 'Mapeamento' },
-                    { id: 'sincronizacao', label: 'Sincronização' },
-                    { id: 'planilha', label: 'Planilha' }
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={(e) => { e.stopPropagation(); toggleChecklist(task, item.id); }}
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all text-sm group ${
-                        task[item.id as keyof Task] === 'finalizado'
-                          ? 'bg-white/10 border-white/20 text-white'
-                          : 'bg-transparent border-white/5 text-[#52525b] hover:border-white/20 hover:text-[#a1a1aa]'
-                      }`}
-                    >
-                      <span className="font-medium">{item.label}</span>
-                      {task[item.id as keyof Task] === 'finalizado' ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                      ) : (
-                        <Circle className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                      )}
-                    </button>
-                  ))}
+                <div className="flex flex-col">
+                   <h3 className="text-lg font-bold text-white group-hover:text-white transition-colors">
+                     {task.cliente || 'Sem Nome'}
+                   </h3>
+                   <div className="flex items-center gap-2 mt-1">
+                     <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider rounded-md border border-blue-500/20">
+                       INSTALAÇÃO
+                     </span>
+                     <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${
+                       task.status === 'pendente' 
+                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
+                        : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                     }`}>
+                       {task.status}
+                     </span>
+                   </div>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="flex items-center justify-center pt-2 opacity-20 hover:opacity-100 transition-opacity">
-               <ChevronDown className="w-4 h-4" />
-            </div>
-          )}
 
-          {/* Rodapé: Data/Hora */}
-          <div className="flex items-center justify-between pt-1 border-t border-white/5 opacity-40 group-hover:opacity-100 transition-opacity">
-            <div className="flex items-center gap-2">
-              <Clock className="w-3 h-3" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">
-                {new Date(task.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-              </span>
+            {/* Grid de Informações */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase font-bold text-[#52525b] tracking-widest">ID / Contrato</span>
+                <span className="text-sm font-medium text-[#a1a1aa] truncate">{task.id.slice(0, 8)}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase font-bold text-[#52525b] tracking-widest">Técnico</span>
+                <span className="text-sm font-medium text-[#a1a1aa] truncate">{task.tecnico}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase font-bold text-[#52525b] tracking-widest">CTO / PON</span>
+                <span className="text-sm font-medium text-[#a1a1aa] truncate">{task.cto || '-'}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase font-bold text-[#52525b] tracking-widest">Lacre</span>
+                <span className="text-sm font-medium text-[#a1a1aa] truncate">{task.lacre || '-'}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase font-bold text-[#52525b] tracking-widest">Equipamento</span>
+                <span className="text-sm font-medium text-[#a1a1aa] truncate">{task.equipamento || '-'}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase font-bold text-[#52525b] tracking-widest">Data</span>
+                <span className="text-sm font-medium text-[#a1a1aa] truncate">
+                  {new Date(task.created_at).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
             </div>
-            {isExpanded && (
-               <div className="flex items-center gap-1 text-[10px] uppercase font-black text-[#52525b]">
-                 RECOLHER <ChevronUp className="w-3 h-3" />
-               </div>
+
+            {/* Observações */}
+            {task.observacoes && (
+              <div className="flex flex-col gap-2 bg-white/5 p-4 rounded-2xl border border-white/5 mx-1 animate-in fade-in slide-in-from-top-1 duration-500">
+                <div className="flex items-center gap-2 text-[#52525b]">
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span className="text-[10px] uppercase font-black tracking-widest text-[#52525b]">Informações Extras</span>
+                </div>
+                <p className="text-xs text-[#a1a1aa] leading-relaxed italic line-clamp-2">
+                  "{task.observacoes}"
+                </p>
+              </div>
             )}
+          </div>
+
+          {/* Divisor Vertical (Apenas Desktop) */}
+          <div className="hidden lg:block w-px bg-white/5" />
+
+          {/* Lado Direito: Checklist (Sempre Visível) */}
+          <div className="lg:w-72 flex flex-col gap-3">
+            <span className="text-[10px] uppercase font-black text-[#52525b] tracking-tighter mb-1">PROTOCOLO DE ATIVAÇÃO</span>
+            <div className="flex flex-col gap-2">
+              {[
+                { id: 'mk_solutions', label: 'Mk Solutions' },
+                { id: 'geosite', label: 'Geosite' },
+                { id: 'mapeamento', label: 'Mapeamento' },
+                { id: 'sincronizacao', label: 'Sincronização' },
+                { id: 'planilha', label: 'Planilha' }
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={(e) => { e.stopPropagation(); toggleChecklist(task, item.id); }}
+                  className={`flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs group/item ${
+                    task[item.id as keyof Task] === 'finalizado'
+                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                      : 'bg-[#18181b] border-white/5 text-[#52525b] hover:border-white/10 hover:text-[#a1a1aa]'
+                  }`}
+                >
+                  <span className="font-semibold">{item.label}</span>
+                  {task[item.id as keyof Task] === 'finalizado' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border-2 border-white/10 group-hover/item:border-white/20" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Ações (Flutuantes ou Canto Superior) */}
+          <div className="flex lg:flex-col items-center gap-2 lg:justify-start">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setEditingTask(task); }}
+              className="flex-1 lg:flex-none p-3 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-2xl border border-cyan-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              title="Editar"
+            >
+              <Pencil className="w-4 h-4" />
+              <span className="lg:hidden">Editar</span>
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setDeletingId(task.id); }}
+              className="flex-1 lg:flex-none p-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-2xl border border-rose-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              title="Excluir"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="lg:hidden">Excluir</span>
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setInfoTask(task); }}
+              className="flex-1 lg:flex-none p-3 bg-white/5 text-[#52525b] hover:bg-white hover:text-black rounded-2xl border border-white/5 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              title="Copiar"
+            >
+              <Clipboard className="w-4 h-4" />
+              <span className="lg:hidden">Copiar</span>
+            </button>
           </div>
         </div>
       </div>
@@ -277,66 +304,66 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
   }
 
   return (
-    <div className="flex flex-col gap-8 w-full mt-8">
-      {/* Barra de Pesquisa */}
-      <div className="relative group max-w-2xl mx-auto w-full">
-        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-          <Search className="w-5 h-5 text-[#52525b] group-focus-within:text-white transition-colors" />
+    <div className="flex flex-col gap-8 w-full mt-2">
+      {/* Search and Filter Header */}
+      <div className="flex flex-col md:flex-row gap-4 items-end bg-[#18181b] p-6 rounded-3xl border border-white/5 shadow-xl">
+        <div className="flex-1 flex flex-col gap-2 w-full">
+          <label className="text-xs font-bold text-[#52525b] ml-1 uppercase tracking-widest">Buscar:</label>
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#52525b] group-focus-within:text-white transition-colors" />
+            <input
+              type="text"
+              placeholder="ID, Técnico, Cliente, Lacre..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#09090b] border border-white/5 text-white pl-11 pr-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5 focus:bg-[#18181b] focus:border-white/10 transition-all placeholder:text-[#52525b] text-sm"
+            />
+          </div>
         </div>
-        <input
-          type="text"
-          placeholder="Pesquisar por ID, Técnico, CTO, Lacre ou Equipamento..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 text-white pl-12 pr-12 py-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/10 focus:bg-white/10 transition-all placeholder:text-[#52525b] placeholder:text-sm"
-        />
-        {searchTerm && (
-          <button
-            onClick={() => setSearchTerm('')}
-            className="absolute inset-y-0 right-4 flex items-center text-[#52525b] hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+        <div className="flex flex-col gap-2 w-full md:w-auto">
+          <label className="text-xs font-bold text-[#52525b] ml-1 uppercase tracking-widest">Status:</label>
+          <div className="flex p-1 bg-[#09090b] rounded-2xl border border-white/5">
+            <button
+              onClick={() => setStatusFilter('pendente')}
+              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+                statusFilter === 'pendente' 
+                  ? 'bg-[#18181b] text-white shadow-xl border border-white/5' 
+                  : 'text-[#52525b] hover:text-[#a1a1aa]'
+              }`}
+            >
+              Pendentes
+            </button>
+            <button
+              onClick={() => setStatusFilter('finalizado')}
+              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+                statusFilter === 'finalizado' 
+                  ? 'bg-[#18181b] text-white shadow-xl border border-white/5' 
+                  : 'text-[#52525b] hover:text-[#a1a1aa]'
+              }`}
+            >
+              Finalizados
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* List Container */}
+      <div className="flex flex-col gap-6 min-h-[400px]">
+        {filteredTasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-[#18181b]/50 rounded-3xl border border-white/5 border-dashed gap-4">
+            <div className="p-4 bg-white/5 rounded-full">
+               <AlertCircle className="w-8 h-8 text-[#52525b]" />
+            </div>
+            <div className="text-center">
+              <p className="text-white font-bold">Nenhuma ordem encontrada</p>
+              <p className="text-[#52525b] text-sm">Tente ajustar seus termos de busca ou filtros.</p>
+            </div>
+          </div>
+        ) : (
+          filteredTasks.map(renderTaskCard)
         )}
       </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-4 w-full">
-      {/* Coluna Pendentes */}
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-3 px-2">
-          <Clock className="w-5 h-5 text-amber-500" />
-          <h2 className="text-xl font-bold">Instalações Pendentes</h2>
-          <span className="bg-white/10 px-2 py-0.5 rounded-md text-xs">{pendingTasks.length}</span>
-        </div>
-        <div className="flex flex-col gap-6">
-          {pendingTasks.length === 0 ? (
-            <div className="p-12 text-center border border-dashed border-white/5 rounded-3xl text-[#52525b] text-sm">
-              {searchTerm ? 'Nenhum resultado encontrado.' : 'Nenhuma instalação pendente.'}
-            </div>
-          ) : (
-            pendingTasks.map(renderTaskCard)
-          )}
-        </div>
-      </div>
-
-      {/* Coluna Finalizadas */}
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-3 px-2">
-          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-          <h2 className="text-xl font-bold">Finalizadas</h2>
-          <span className="bg-white/10 px-2 py-0.5 rounded-md text-xs">{finishedTasks.length}</span>
-        </div>
-        <div className="flex flex-col gap-6 opacity-60 hover:opacity-100 transition-opacity duration-500 text-center">
-          {finishedTasks.length === 0 ? (
-            <div className="p-12 text-center border border-dashed border-white/5 rounded-3xl text-[#52525b] text-sm">
-              {searchTerm ? 'Nenhum resultado encontrado.' : 'Nenhuma tarefa finalizada ainda.'}
-            </div>
-          ) : (
-            finishedTasks.map(renderTaskCard)
-          )}
-        </div>
-      </div>
-    </div>
 
       {/* Pop-up de Confirmação de Exclusão */}
       <Modal 

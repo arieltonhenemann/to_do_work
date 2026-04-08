@@ -31,26 +31,28 @@ export default function MaintenancePage() {
   }, [fetchTasks])
 
   return (
-    <div className="flex flex-col gap-8 max-w-7xl mx-auto animate-in fade-in duration-700">
+    <div className="flex flex-col gap-8 max-w-7xl mx-auto animate-in fade-in duration-700 min-h-screen">
       <div className="flex flex-col gap-2 border-b border-white/5 pb-8">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-amber-500 rounded-lg">
+          <div className="p-2 bg-white rounded-xl shadow-sm border border-white/10">
             <Wrench className="w-6 h-6 text-black" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-white">Manutenção</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight text-white">Manutenções</h1>
         </div>
         <p className="text-[#a1a1aa] text-sm max-w-2xl ml-1">
-          Histórico e registro de manutenções preventivas e corretivas em campo.
+          Histórico e registro de manutenções preventivas e corretivas em campo. Gerencie chamados técnicos e acompanhe o checklist de conclusão.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-12">
+        {/* Formulário de Cadastro */}
         <MaintenanceForm onTaskAdded={fetchTasks} />
 
+        {/* Listagem Separada por Status */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-white/20" />
-            <p className="text-[#52525b] text-xs uppercase tracking-widest font-bold">Buscando manutenções...</p>
+            <p className="text-[#52525b] text-xs uppercase tracking-widest font-bold">Carregando manutenções...</p>
           </div>
         ) : (
           <MaintenanceList tasks={tasks} onUpdate={fetchTasks} />

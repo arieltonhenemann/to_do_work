@@ -47,17 +47,13 @@ type Task = {
 export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], onUpdate: () => void }) {
   const supabase = createClient()
   
+  const [statusFilter, setStatusFilter] = useState<'pendente' | 'finalizado'>('pendente')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [quickInfoTask, setQuickInfoTask] = useState<Task | null>(null)
-  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
-
-  const toggleExpand = (taskId: string) => {
-    setExpandedTaskId(expandedTaskId === taskId ? null : taskId)
-  }
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -81,6 +77,27 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
 
     if (error) {
       console.error('Erro ao atualizar:', error.message)
+    } else {
+      onUpdate()
+    }
+  }
+
+  const finishAllItems = async (task: Task) => {
+    const checklistFields = {
+      mk_solutions: 'finalizado',
+      mapeamento: 'finalizado',
+      geosite: 'finalizado',
+      planilha: 'finalizado',
+      status: 'finalizado'
+    }
+
+    const { error } = await supabase
+      .from('tasks')
+      .update(checklistFields)
+      .eq('id', task.id)
+
+    if (error) {
+      console.error('Erro ao finalizar todos:', error.message)
     } else {
       onUpdate()
     }
@@ -122,7 +139,6 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
     setLoading(false)
   }
 
-  // Modificar um lacre individual dentro de uma tarefa (exclusão ou edição rápida)
   const updateSingleLacre = async (task: Task, lacreId: string, action: 'delete' | 'toggleStatus') => {
     let newLacresData = [...task.lacres_data]
     
@@ -145,169 +161,147 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
   }
 
   const filteredTasks = tasks.filter(t => {
-    const search = searchTerm.toLowerCase()
-    const matchesLacre = t.lacres_data.some(l => 
-      l.lacre.toLowerCase().includes(search) || 
-      l.cliente.toLowerCase().includes(search)
-    )
-    return (
-      t.tecnico?.toLowerCase().includes(search) ||
-      t.cto?.toLowerCase().includes(search) ||
-      matchesLacre
-    )
+    const matchesSearch = !searchTerm || 
+      t.tecnico?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.cto?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.lacres_data.some(l => l.lacre.toLowerCase().includes(searchTerm.toLowerCase()) || l.cliente.toLowerCase().includes(searchTerm.toLowerCase()))
+    
+    return matchesSearch && t.status === statusFilter
   })
 
-  const pendingTasks = filteredTasks.filter(t => t.status === 'pendente')
-  const finishedTasks = filteredTasks.filter(t => t.status === 'finalizado')
-
   const renderTaskCard = (task: Task) => {
-    const isExpanded = expandedTaskId === task.id
-
     return (
       <div 
         key={task.id} 
-        onClick={() => toggleExpand(task.id)}
-        className={`relative glass-card-lite p-6 rounded-[32px] border border-white/5 animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer hover:border-white/10 transition-all ${isExpanded ? 'ring-2 ring-white/5' : ''}`}
+        className="group relative bg-[#18181b] rounded-3xl border border-white/5 p-6 transition-all hover:shadow-2xl hover:shadow-black/40 hover:border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-500"
       >
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-end items-start -mb-2">
-            <div className="flex gap-1.5 shadow-xl shadow-black/20 bg-black/40 p-1.5 rounded-xl border border-white/5">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Lado Esquerdo: Info e Conteúdo */}
+          <div className="flex-1 flex flex-col gap-6">
+            {/* Header do Card */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/5 rounded-2xl border border-white/5 group-hover:scale-110 transition-transform">
+                  <Trash2 className="w-6 h-6 text-[#a1a1aa]" />
+                </div>
+                <div className="flex flex-col">
+                   <h3 className="text-lg font-bold text-white group-hover:text-white transition-colors">
+                     {task.tecnico || 'Sem Técnico'}
+                   </h3>
+                   <div className="flex items-center gap-2 mt-1">
+                     <span className="px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-wider rounded-md border border-red-500/20">
+                       LOTE: {task.cto}
+                     </span>
+                     <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${
+                       task.status === 'pendente' 
+                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
+                        : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                     }`}>
+                       {task.status === 'pendente' ? 'Pendente' : 'Arquivado'}
+                     </span>
+                     <span className="px-2 py-0.5 bg-white/5 text-[#52525b] text-[10px] font-bold uppercase tracking-wider rounded-md border border-white/5">
+                        {task.lacres_data.length} LACRES
+                     </span>
+                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Listagem de Lacres Interna (Mini) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[160px] overflow-y-auto custom-scrollbar pr-2">
+               {task.lacres_data.map((lacre) => (
+                 <div key={lacre.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                   lacre.status === 'ativo' 
+                    ? 'bg-emerald-500/5 border-emerald-500/10' 
+                    : 'bg-red-500/5 border-red-500/10'
+                 }`}>
+                   <div className="flex flex-col">
+                     <span className="text-[11px] font-bold text-white truncate max-w-[120px]">{lacre.cliente}</span>
+                     <span className="text-[9px] text-[#52525b] font-black italic">#{lacre.lacre}</span>
+                   </div>
+                   <button 
+                     onClick={(e) => { e.stopPropagation(); updateSingleLacre(task, lacre.id, 'toggleStatus'); }}
+                     className={`text-[8px] font-black px-2 py-1 rounded-md border transition-all ${
+                        lacre.status === 'ativo' 
+                          ? 'bg-emerald-500 text-white border-emerald-400' 
+                          : 'bg-red-500 text-white border-red-400'
+                     }`}
+                   >
+                     {lacre.status === 'ativo' ? 'ATIVO' : 'OFF'}
+                   </button>
+                 </div>
+               ))}
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-white/5">
+              <div className="flex items-center gap-4 text-[10px] font-bold text-[#52525b] uppercase tracking-widest">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3 h-3" />
+                  {new Date(task.created_at).toLocaleDateString('pt-BR')} às {new Date(task.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Hexagon className="w-3 h-3" />
+                  ID: {task.id.slice(0, 8)}
+                </div>
+              </div>
               <button 
                 onClick={(e) => { e.stopPropagation(); setQuickInfoTask(task); }}
-                className="p-2 hover:bg-white/10 text-[#a1a1aa] hover:text-white rounded-lg transition-all"
-                title="Informações Rápidas"
+                className="flex items-center gap-1.5 text-[9px] font-black text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/5 transition-all"
               >
-                <Clipboard className="w-4 h-4" />
+                <Clipboard className="w-3.5 h-3.5 text-red-500" /> COPIAR LOTE
               </button>
-              {task.status === 'pendente' && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setEditingTask(task); }}
-                  className="p-2 hover:bg-white/10 text-[#a1a1aa] hover:text-white rounded-lg transition-all"
-                  title="Editar"
+            </div>
+          </div>
+
+          {/* Divisor Vertical */}
+          <div className="hidden lg:block w-px bg-white/5" />
+
+          {/* Lado Direito: Checklist */}
+          <div className="lg:w-64 flex flex-col gap-3">
+            <span className="text-[10px] uppercase font-black text-[#52525b] tracking-tighter mb-1">PROTOCOLO DE DESATIVAÇÃO</span>
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
+              {[
+                { id: 'mk_solutions', label: 'Mk Sol.' },
+                { id: 'mapeamento', label: 'Mapeam.' },
+                { id: 'geosite', label: 'Geosite' },
+                { id: 'planilha', label: 'Planilha' }
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={(e) => { e.stopPropagation(); toggleChecklist(task, item.id); }}
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all text-[11px] group/item ${
+                    task[item.id as keyof Task] === 'finalizado'
+                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                      : 'bg-[#18181b] border-white/5 text-[#52525b] hover:border-white/10 hover:text-[#a1a1aa]'
+                  }`}
                 >
-                  <Pencil className="w-4 h-4" />
+                  <span className="font-bold uppercase">{item.label}</span>
+                  {task[item.id as keyof Task] === 'finalizado' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border-2 border-white/10 group-hover/item:border-white/20" />
+                  )}
                 </button>
-              )}
-              <button 
-                onClick={(e) => { e.stopPropagation(); setDeletingId(task.id); }}
-                className="p-2 hover:bg-red-500/10 text-[#52525b] hover:text-red-400 rounded-lg transition-all"
-                title="Excluir"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mt-1">
-            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
-              <User className="w-3.5 h-3.5 text-white/40" />
-              <span className="font-medium truncate">Técnico: {task.tecnico}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
-              <Hexagon className="w-3.5 h-3.5 text-white/40" />
-              <span className="font-medium truncate text-white">CTO: {task.cto}</span>
-            </div>
-          </div>
-
-          {/* Conteúdo Expansível */}
-          {isExpanded ? (
-            <div className="flex flex-col gap-6 pt-4 border-t border-white/5 animate-in slide-in-from-top-2 duration-300">
-              {/* Lista Dinâmica de Lacres (Sets) */}
-              <div className="flex flex-col gap-2.5">
-                <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1 mb-1">Conjunto de Lacres</p>
-                <div className="max-h-[200px] overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-2">
-                  {task.lacres_data.map((lacre) => (
-                    <div 
-                      key={lacre.id} 
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-500 group ${
-                        lacre.status === 'ativo' 
-                        ? 'bg-emerald-500/5 border-emerald-500/20' 
-                        : 'bg-red-500/5 border-red-500/20'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-1.5 h-6 rounded-full ${lacre.status === 'ativo' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold text-white">{lacre.cliente}</span>
-                          <span className="text-[10px] text-[#a1a1aa] font-bold">Lacre: {lacre.lacre}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); updateSingleLacre(task, lacre.id, 'toggleStatus'); }}
-                          className={`text-[9px] font-black px-3 py-1.5 rounded-full transition-all border ${
-                            lacre.status === 'ativo' 
-                            ? 'bg-emerald-500 text-white border-emerald-400' 
-                            : 'bg-red-500 text-white border-red-400'
-                          }`}
-                        >
-                          {lacre.status === 'ativo' ? 'ATIVO' : 'DESATIVADO'}
-                        </button>
-                        
-                        {task.status === 'pendente' && (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); updateSingleLacre(task, lacre.id, 'delete'); }}
-                            className="p-2 opacity-0 group-hover:opacity-100 text-[#52525b] hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Checklist final */}
-              <div className="pt-2 border-t border-white/5">
-                <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-black mb-3 ml-1">Protocolos de Finalização</p>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {[
-                    { id: 'mk_solutions', label: 'Mk Sol.' },
-                    { id: 'mapeamento', label: 'Mapeam.' },
-                    { id: 'geosite', label: 'Geosite' },
-                    { id: 'planilha', label: 'Planilha' }
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={(e) => { e.stopPropagation(); toggleChecklist(task, item.id); }}
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all text-sm group ${
-                        task[item.id as keyof Task] === 'finalizado'
-                          ? 'bg-white/10 border-white/20 text-white'
-                          : 'bg-transparent border-white/5 text-[#52525b] hover:border-white/20 hover:text-[#a1a1aa]'
-                      }`}
-                    >
-                      <span className="font-bold text-[10px] uppercase">{item.label}</span>
-                      {task[item.id as keyof Task] === 'finalizado' ? (
-                        <CheckCircle2 className="w-5 h-5 text-red-500" />
-                      ) : (
-                        <Circle className="w-5 h-5 opacity-20 group-hover:opacity-100 transition-opacity" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center pt-2 opacity-20 hover:opacity-100 transition-opacity">
-               <ChevronDown className="w-4 h-4" />
-            </div>
-          )}
-
-          {/* Rodapé: Data/Hora */}
-          <div className="flex items-center justify-between pt-1 border-t border-white/5 opacity-40 group-hover:opacity-100 transition-opacity">
-            <div className="flex items-center gap-2">
-              <Clock className="w-3 h-3" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">
-                {new Date(task.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-            {isExpanded && (
-               <div className="flex items-center gap-1 text-[10px] uppercase font-black text-[#52525b]">
-                 RECOLHER <ChevronUp className="w-3 h-3" />
-               </div>
-            )}
+          {/* Ações */}
+          <div className="flex lg:flex-col items-center gap-2 lg:justify-start">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setEditingTask(task); }}
+              className="flex-1 lg:flex-none p-3 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-2xl border border-cyan-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              title="Editar"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setDeletingId(task.id); }}
+              className="flex-1 lg:flex-none p-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-2xl border border-rose-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              title="Excluir"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
@@ -315,223 +309,143 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
   }
 
   return (
-    <div className="flex flex-col gap-8 w-full mt-8">
-      {/* Barra de Pesquisa */}
-      <div className="relative group max-w-2xl mx-auto w-full">
-        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-          <Search className="w-5 h-5 text-[#52525b] group-focus-within:text-white transition-colors" />
+    <div className="flex flex-col gap-8 w-full mt-2">
+      {/* Search and Filter Header */}
+      <div className="flex flex-col md:flex-row gap-4 items-end bg-[#18181b] p-6 rounded-3xl border border-white/5 shadow-xl">
+        <div className="flex-1 flex flex-col gap-2 w-full">
+          <label className="text-xs font-bold text-[#52525b] ml-1 uppercase tracking-widest">Buscar Retiradas:</label>
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#52525b] group-focus-within:text-white transition-colors" />
+            <input
+              type="text"
+              placeholder="Pesquisar por técnico, CTO, cliente ou lotes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#09090b] border border-white/5 text-white pl-11 pr-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5 focus:bg-[#18181b] focus:border-white/10 transition-all placeholder:text-[#52525b] text-sm"
+            />
+          </div>
         </div>
-        <input
-          type="text"
-          placeholder="Pesquisar por Técnico, CTO ou Lacre..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 text-white pl-12 pr-12 py-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/10 focus:bg-white/10 transition-all placeholder:text-[#52525b] placeholder:text-sm"
-        />
-        {searchTerm && (
-          <button
-            onClick={() => setSearchTerm('')}
-            className="absolute inset-y-0 right-4 flex items-center text-[#52525b] hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+        <div className="flex flex-col gap-2 w-full md:w-auto">
+          <label className="text-xs font-bold text-[#52525b] ml-1 uppercase tracking-widest">Filtro de Lotes:</label>
+          <div className="flex p-1 bg-[#09090b] rounded-2xl border border-white/5">
+            <button
+              onClick={() => setStatusFilter('pendente')}
+              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+                statusFilter === 'pendente' 
+                  ? 'bg-[#18181b] text-white shadow-xl border border-white/5' 
+                  : 'text-[#52525b] hover:text-[#a1a1aa]'
+              }`}
+            >
+              Pendentes
+            </button>
+            <button
+              onClick={() => setStatusFilter('finalizado')}
+              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+                statusFilter === 'finalizado' 
+                  ? 'bg-[#18181b] text-white shadow-xl border border-white/5' 
+                  : 'text-[#52525b] hover:text-[#a1a1aa]'
+              }`}
+            >
+              Arquivadas
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* List Container */}
+      <div className="flex flex-col gap-4 min-h-[400px]">
+        {filteredTasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-[#18181b]/50 rounded-3xl border border-white/5 border-dashed gap-4">
+            <div className="p-4 bg-white/5 rounded-full">
+               <AlertCircle className="w-8 h-8 text-[#52525b]" />
+            </div>
+            <div className="text-center">
+              <p className="text-white font-bold">Nenhum lote encontrado</p>
+              <p className="text-[#52525b] text-sm">Tente ajustar seus termos de busca ou filtros.</p>
+            </div>
+          </div>
+        ) : (
+          filteredTasks.map(renderTaskCard)
         )}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-4 w-full">
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-3 px-2">
-          <Clock className="w-5 h-5 text-red-500" />
-          <h2 className="text-xl font-bold">Retiradas Pendentes</h2>
-          <span className="bg-white/10 px-2 py-0.5 rounded-md text-xs">{pendingTasks.length}</span>
-        </div>
+      <Modal isOpen={!!deletingId} onClose={() => setDeletingId(null)} title="Excluir Lote">
         <div className="flex flex-col gap-6">
-          {pendingTasks.length === 0 ? (
-            <div className="p-12 text-center border border-dashed border-white/5 rounded-[40px] text-[#52525b] text-sm font-black uppercase tracking-widest">
-              {searchTerm ? 'Nenhum resultado encontrado.' : 'Sem retiradas para processar.'}
-            </div>
-          ) : (
-            pendingTasks.map(renderTaskCard)
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-3 px-2">
-          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-          <h2 className="text-xl font-bold">Lotes Arquivados</h2>
-          <span className="bg-white/10 px-2 py-0.5 rounded-md text-xs">{finishedTasks.length}</span>
-        </div>
-        <div className="flex flex-col gap-6 opacity-60 hover:opacity-100 transition-opacity duration-500 text-center">
-          {finishedTasks.length === 0 ? (
-            <div className="p-12 text-center border border-dashed border-white/5 rounded-[40px] text-[#52525b] text-sm">
-              {searchTerm ? 'Nenhum resultado encontrado.' : 'Histórico vazio.'}
-            </div>
-          ) : (
-            finishedTasks.map(renderTaskCard)
-          )}
-        </div>
-      </div>
-    </div>
-
-      {/* Pop-up de Exclusão Tarefa Inteira */}
-      <Modal 
-        isOpen={!!deletingId} 
-        onClose={() => setDeletingId(null)} 
-        title="Apagar Tarefa Completa"
-      >
-        <div className="flex flex-col gap-6 text-center py-4">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
-          <p className="text-lg text-white font-bold">Deseja realmente excluir a tarefa pendente?</p>
-          <p className="text-sm text-[#a1a1aa]">Ao confirmar, todos os lacres deste conjunto serão apagados permanentemente.</p>
-          
-          <div className="flex gap-4 mt-4">
-            <button
-              onClick={confirmDeleteTask}
-              disabled={loading}
-              className="flex-1 bg-red-500 hover:bg-red-400 text-white font-black py-4 rounded-[24px] transition-all flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sim, Excluir Tudo'}
-            </button>
-            <button
-              onClick={() => setDeletingId(null)}
-              className="flex-1 bg-white/5 hover:bg-white/10 text-white font-black py-4 rounded-[24px] border border-white/5 transition-all"
-            >
-              Não, Manter
-            </button>
+          <p className="text-[#a1a1aa]">Tem certeza que deseja excluir este lote de retirada? Esta ação apagará todos os lacres vinculados.</p>
+          <div className="flex gap-4">
+            <button onClick={() => setDeletingId(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all">Cancelar</button>
+            <button onClick={confirmDeleteTask} className="flex-1 py-3 rounded-2xl bg-rose-500 text-white font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20">Excluir Lote</button>
           </div>
         </div>
       </Modal>
 
-      {/* Pop-up de Edição Completa */}
-      <Modal 
-        isOpen={!!editingTask} 
-        onClose={() => setEditingTask(null)} 
-        title="Ajustar Retirada"
-      >
+      <Modal isOpen={!!editingTask} onClose={() => setEditingTask(null)} title="Editar Lote">
         <form onSubmit={handleEditSave} className="flex flex-col gap-6">
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] uppercase font-bold text-[#52525b]">Técnico</label>
-              <input
-                type="text" required
-                value={editingTask?.tecnico || ''}
-                onChange={(e) => setEditingTask({...editingTask!, tecnico: e.target.value})}
-                className="todo-input px-3 py-2 rounded-xl text-sm"
-              />
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-[#52525b] ml-1 uppercase">Técnico</label>
+              <input type="text" value={editingTask?.tecnico || ''} onChange={(e) => setEditingTask({...editingTask!, tecnico: e.target.value})} className="bg-[#09090b] border border-white/5 text-white px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5" />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] uppercase font-bold text-[#52525b]">CTO</label>
-              <input
-                type="text" required
-                value={editingTask?.cto || ''}
-                onChange={(e) => setEditingTask({...editingTask!, cto: e.target.value})}
-                className="todo-input px-3 py-2 rounded-xl text-sm"
-              />
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-[#52525b] ml-1 uppercase">CTO</label>
+              <input type="text" value={editingTask?.cto || ''} onChange={(e) => setEditingTask({...editingTask!, cto: e.target.value})} className="bg-[#09090b] border border-white/5 text-white px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5" />
             </div>
           </div>
-          
-          {/* Edição da lista de lacres no modal */}
-          <div className="space-y-3">
+
+          <div className="flex flex-col gap-2">
              <div className="flex items-center justify-between">
-                <p className="text-[10px] uppercase font-black text-[#52525b]">Editar Lista de Lacres</p>
-                <button 
-                  type="button"
-                  onClick={() => setEditingTask({...editingTask!, lacres_data: [...editingTask!.lacres_data, { id: crypto.randomUUID(), lacre: '', cliente: '', status: 'ativo' }]})}
-                  className="flex items-center gap-1 text-[9px] font-black bg-white/5 px-2 py-1 rounded-md"
-                >
-                  <Plus className="w-3 h-3" /> ADICIONAR
+                <p className="text-xs font-bold text-[#52525b] uppercase">Lista de Lacres</p>
+                <button type="button" onClick={() => setEditingTask({...editingTask!, lacres_data: [...editingTask!.lacres_data, { id: crypto.randomUUID(), lacre: '', cliente: '', status: 'ativo' }]})} className="text-[10px] font-black bg-white group hover:bg-red-500 hover:text-white text-black px-3 py-1 rounded-lg transition-all">
+                  + ADICIONAR
                 </button>
              </div>
-             
-             <div className="max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col gap-2 pr-2">
+             <div className="max-h-[240px] overflow-y-auto pr-2 flex flex-col gap-2">
                 {editingTask?.lacres_data.map((l, i) => (
-                  <div key={l.id} className="bg-black/40 p-3 rounded-2xl border border-white/5 flex flex-col gap-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <input 
-                        className="todo-input px-2 py-1.5 rounded-lg text-xs" 
-                        placeholder="Lacre" value={l.lacre}
-                        onChange={(e) => {
-                          const newL = [...editingTask.lacres_data];
-                          newL[i].lacre = e.target.value;
-                          setEditingTask({...editingTask, lacres_data: newL});
-                        }}
-                      />
-                      <input 
-                        className="todo-input px-2 py-1.5 rounded-lg text-xs" 
-                        placeholder="Cliente" value={l.cliente}
-                        onChange={(e) => {
-                          const newL = [...editingTask.lacres_data];
-                          newL[i].cliente = e.target.value;
-                          setEditingTask({...editingTask, lacres_data: newL});
-                        }}
-                      />
-                    </div>
+                  <div key={l.id} className="grid grid-cols-12 gap-2 bg-[#09090b] p-3 rounded-2xl border border-white/5">
+                    <input className="col-span-5 bg-white/5 rounded-lg px-2 py-1.5 text-xs text-white border border-transparent focus:border-white/10 outline-none" placeholder="Lacre" value={l.lacre} onChange={(e) => {
+                      const newData = [...editingTask.lacres_data]; newData[i].lacre = e.target.value; setEditingTask({...editingTask, lacres_data: newData});
+                    }} />
+                    <input className="col-span-6 bg-white/5 rounded-lg px-2 py-1.5 text-xs text-white border border-transparent focus:border-white/10 outline-none" placeholder="Cliente" value={l.cliente} onChange={(e) => {
+                      const newData = [...editingTask.lacres_data]; newData[i].cliente = e.target.value; setEditingTask({...editingTask, lacres_data: newData});
+                    }} />
+                    <button type="button" onClick={() => {
+                      const newData = editingTask.lacres_data.filter((_, idx) => idx !== i); setEditingTask({...editingTask, lacres_data: newData});
+                    }} className="col-span-1 text-red-500 hover:scale-110 flex items-center justify-center">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))}
              </div>
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-white/5">
-            <button
-              type="submit" disabled={loading}
-              className="flex-1 bg-white hover:bg-[#e4e4e7] text-black font-black py-4 rounded-[24px] flex items-center justify-center gap-2 shadow-2xl shadow-white/10"
-            >
-               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'SALVAR TODAS AS ALTERAÇÕES'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditingTask(null)}
-              className="flex-1 bg-white/5 hover:bg-white/10 text-white font-black py-4 rounded-[24px] border border-white/5"
-            >
-              CANCELAR
-            </button>
+          <div className="flex gap-4">
+            <button type="button" onClick={() => setEditingTask(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all">Cancelar</button>
+            <button type="submit" className="flex-1 py-3 rounded-2xl bg-white text-black font-bold hover:bg-[#e4e4e7] transition-all shadow-lg">Salvar Lote</button>
           </div>
         </form>
       </Modal>
 
-      {/* Pop-up de Informações Rápidas */}
-      <Modal 
-        isOpen={!!quickInfoTask} 
-        onClose={() => setQuickInfoTask(null)} 
-        title="Informações de Retirada (Lote)"
-      >
+      <Modal isOpen={!!quickInfoTask} onClose={() => setQuickInfoTask(null)} title="Copiar Lote">
         <div className="flex flex-col gap-6">
-          <div className="bg-black/40 p-6 rounded-[32px] border border-white/10 max-h-[400px] overflow-y-auto custom-scrollbar">
-            <div className="flex flex-col gap-2 font-mono text-sm text-white tracking-tight">
-              {quickInfoTask?.lacres_data.map((l, idx) => (
-                <div key={l.id} className="flex items-center gap-2">
-                  <span className="opacity-50 text-[10px] w-4">{idx + 1}.</span>
-                  <span>Cliente: {l.cliente} - Lacre: {l.lacre}</span>
-                </div>
-              ))}
-            </div>
+          <div className="bg-[#09090b] p-6 rounded-3xl border border-white/5 max-h-[300px] overflow-y-auto">
+             <div className="flex flex-col gap-1 font-mono text-xs text-[#a1a1aa]">
+                {quickInfoTask?.lacres_data.map((l, idx) => (
+                  <div key={l.id}>{idx + 1}. {l.cliente}: {l.lacre}</div>
+                ))}
+             </div>
           </div>
-          
           <button
             onClick={() => {
-              const text = quickInfoTask?.lacres_data
-                .map(l => `Cliente: ${l.cliente} - Lacre: ${l.lacre}`)
-                .join('\n') || ''
+              const text = quickInfoTask?.lacres_data.map(l => `${l.cliente}: ${l.lacre}`).join('\n') || ''
               copyToClipboard(text)
             }}
-            className={`w-full py-4 rounded-[28px] font-black transition-all flex items-center justify-center gap-2 shadow-2xl ${
-              copied 
-                ? 'bg-emerald-500 text-white' 
-                : 'bg-white text-black hover:bg-[#e4e4e7]'
+            className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
+              copied ? 'bg-emerald-500 text-white' : 'bg-white text-black hover:bg-[#e4e4e7]'
             }`}
           >
-            {copied ? (
-              <>
-                <Check className="w-5 h-5" />
-                COPIADO!
-              </>
-            ) : (
-              <>
-                <Clipboard className="w-5 h-5" />
-                COPIAR TODO O LOTE
-              </>
-            )}
+            {copied ? <CheckCircle2 className="w-5 h-5" /> : <Clipboard className="w-5 h-5" />}
+            {copied ? 'COPIADO COM SUCESSO!' : 'COPIAR LISTA PARA CLIPBOARD'}
           </button>
         </div>
       </Modal>

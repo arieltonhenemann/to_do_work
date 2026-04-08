@@ -39,17 +39,17 @@ export default function OtherSolicitationForm({ onTaskAdded }: { onTaskAdded: ()
   }
 
   return (
-    <div className="glass-card p-8 rounded-3xl border border-white/5 animate-in fade-in slide-in-from-top-4 duration-500">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 bg-white/5 rounded-xl border border-white/10">
-          <MessageSquare className="w-5 h-5 text-white" />
+    <div className="bg-[#18181b] p-8 rounded-[32px] border border-white/5 animate-in fade-in slide-in-from-top-4 duration-500 shadow-xl shadow-black/20">
+      <h2 className="text-xl font-extrabold mb-8 flex items-center gap-3 text-white">
+        <div className="p-2 bg-white rounded-lg">
+          <MessageSquare className="w-5 h-5 text-black" />
         </div>
-        <h2 className="text-xl font-bold text-white">Nova Solicitação Geral</h2>
-      </div>
+        Nova Solicitação Geral
+      </h2>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <div className="flex flex-col gap-1.5 group">
-          <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1 flex items-center gap-2 group-focus-within:text-white transition-colors">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex flex-col gap-2 md:col-span-2">
+          <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1 flex items-center gap-2">
             <User className="w-3 h-3" /> Solicitante
           </label>
           <input
@@ -57,50 +57,52 @@ export default function OtherSolicitationForm({ onTaskAdded }: { onTaskAdded: ()
             required
             value={formData.solicitante}
             onChange={(e) => setFormData({ ...formData, solicitante: e.target.value })}
-            className="todo-input px-5 py-3 rounded-2xl text-sm transition-all focus:ring-2 focus:ring-white/10 bg-white/5 border-white/5 hover:border-white/10"
+            className="w-full bg-[#09090b] border border-white/5 text-white px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5 focus:bg-[#18181b] focus:border-white/10 transition-all placeholder:text-[#52525b] text-sm"
             placeholder="Nome de quem solicitou"
           />
         </div>
 
-        <div className="flex flex-col gap-1.5 group">
-          <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1 flex items-center gap-2 group-focus-within:text-white transition-colors">
+        <div className="flex flex-col gap-2">
+          <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1 flex items-center gap-2">
             <MessageSquare className="w-3 h-3" /> Problema
           </label>
           <textarea
             required
-            rows={3}
+            rows={4}
             value={formData.problema_reclamado}
             onChange={(e) => setFormData({ ...formData, problema_reclamado: e.target.value })}
-            className="todo-input px-5 py-3 rounded-2xl text-sm transition-all focus:ring-2 focus:ring-white/10 resize-none bg-white/5 border-white/5 hover:border-white/10"
+            className="w-full bg-[#09090b] border border-white/5 text-white px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5 focus:bg-[#18181b] focus:border-white/10 transition-all placeholder:text-[#52525b] text-sm resize-none"
             placeholder="Descreva o problema reclamado..."
           />
         </div>
 
-        <div className="flex flex-col gap-1.5 group">
-          <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1 flex items-center gap-2 group-focus-within:text-white transition-colors">
+        <div className="flex flex-col gap-2">
+          <label className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1 flex items-center gap-2">
             <Lightbulb className="w-3 h-3" /> Solução (Se houver)
           </label>
           <textarea
-            rows={2}
+            rows={4}
             value={formData.solucao}
             onChange={(e) => setFormData({ ...formData, solucao: e.target.value })}
-            className="todo-input px-5 py-3 rounded-2xl text-sm transition-all focus:ring-2 focus:ring-white/10 resize-none bg-white/5 border-white/5 hover:border-white/10"
+            className="w-full bg-[#09090b] border border-white/5 text-white px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5 focus:bg-[#18181b] focus:border-white/10 transition-all placeholder:text-[#52525b] text-sm resize-none"
             placeholder="Solução aplicada ou nota técnica..."
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-white text-black py-4 rounded-2xl font-black text-sm hover:bg-[#e4e4e7] transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 mt-2 shadow-xl shadow-white/5"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-            <>
-              <Send className="w-4 h-4" />
-              REGISTRAR SOLICITAÇÃO
-            </>
-          )}
-        </button>
+        <div className="md:col-span-2 mt-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-white text-black py-4 rounded-2xl font-bold text-sm hover:bg-[#e4e4e7] transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-white/5"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+              <>
+                <Send className="w-4 h-4" />
+                REGISTRAR SOLICITAÇÃO
+              </>
+            )}
+          </button>
+        </div>
       </form>
     </div>
   )

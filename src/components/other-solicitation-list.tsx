@@ -17,7 +17,8 @@ import {
   ChevronUp,
   Search,
   X,
-  AlertCircle
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react'
 import Modal from './modal'
 
@@ -36,15 +37,11 @@ type Task = {
 export default function OtherSolicitationList({ tasks, onUpdate }: { tasks: Task[], onUpdate: () => void }) {
   const supabase = createClient()
   
+  const [statusFilter, setStatusFilter] = useState<'pendente' | 'finalizado'>('pendente')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(false)
-
-  const toggleExpand = (taskId: string) => {
-    setExpandedTaskId(expandedTaskId === taskId ? null : taskId)
-  }
 
   const toggleChecklist = async (task: Task, field: string) => {
     const currentValue = task[field as keyof Task]
@@ -63,6 +60,25 @@ export default function OtherSolicitationList({ tasks, onUpdate }: { tasks: Task
 
     if (error) {
       console.error('Erro ao atualizar:', error.message)
+    } else {
+      onUpdate()
+    }
+  }
+
+  const finishAllItems = async (task: Task) => {
+    const checklistFields = {
+      resolvido: 'finalizado',
+      planilha: 'finalizado',
+      status: 'finalizado'
+    }
+
+    const { error } = await supabase
+      .from('tasks')
+      .update(checklistFields)
+      .eq('id', task.id)
+
+    if (error) {
+      console.error('Erro ao finalizar todos:', error.message)
     } else {
       onUpdate()
     }
@@ -105,121 +121,129 @@ export default function OtherSolicitationList({ tasks, onUpdate }: { tasks: Task
   }
 
   const filteredTasks = tasks.filter(t => {
-    const search = searchTerm.toLowerCase()
-    return (
-      t.solicitante?.toLowerCase().includes(search) ||
-      t.problema_reclamado?.toLowerCase().includes(search) ||
-      t.solucao?.toLowerCase().includes(search)
-    )
+    const matchesSearch = !searchTerm || 
+      t.solicitante?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.problema_reclamado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.id.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    return matchesSearch && t.status === statusFilter
   })
 
-  const pendingTasks = filteredTasks.filter(t => t.status === 'pendente')
-  const finishedTasks = filteredTasks.filter(t => t.status === 'finalizado')
-
   const renderTaskCard = (task: Task) => {
-    const isExpanded = expandedTaskId === task.id
-
     return (
       <div 
         key={task.id} 
-        onClick={() => toggleExpand(task.id)}
-        className={`relative glass-card-lite p-6 rounded-[32px] border border-white/5 animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer hover:border-white/10 transition-all ${isExpanded ? 'ring-2 ring-white/5' : ''}`}
+        className="group relative bg-[#18181b] rounded-3xl border border-white/5 p-6 transition-all hover:shadow-2xl hover:shadow-black/40 hover:border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-500"
       >
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-end items-start -mb-2">
-            <div className="flex gap-1.5 shadow-xl shadow-black/20 bg-black/40 p-1.5 rounded-xl border border-white/5">
-              {task.status === 'pendente' && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setEditingTask(task); }}
-                  className="p-2 hover:bg-white/10 text-[#a1a1aa] hover:text-white rounded-lg transition-all"
-                  title="Editar"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-              )}
-              <button 
-                onClick={(e) => { e.stopPropagation(); setDeletingId(task.id); }}
-                className="p-2 hover:bg-red-500/10 text-[#52525b] hover:text-red-400 rounded-lg transition-all"
-                title="Excluir"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 mt-1">
-            <div className="flex items-center gap-2 text-xs text-[#a1a1aa] bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
-              <Hexagon className="w-3.5 h-3.5 text-white/40" />
-              <span className="font-medium truncate text-white">ID (Solicitante): {task.solicitante}</span>
-            </div>
-            
-            <div className="flex flex-col gap-1.5 bg-white/5 p-4 rounded-2xl border border-white/5 transition-colors hover:bg-white/10 min-h-[80px]">
-              <div className="flex items-center gap-2 text-[#52525b]">
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span className="text-[10px] uppercase font-black tracking-widest">Problema</span>
-              </div>
-              <p className="text-xs text-[#a1a1aa] leading-relaxed">{task.problema_reclamado}</p>
-            </div>
-
-            <div className="flex flex-col gap-1.5 bg-white/5 p-4 rounded-2xl border border-white/5 transition-colors hover:bg-white/10 min-h-[80px]">
-              <div className="flex items-center gap-2 text-[#52525b]">
-                <Lightbulb className="w-3.5 h-3.5" />
-                <span className="text-[10px] uppercase font-black tracking-widest">Solução Aplicada</span>
-              </div>
-              <p className="text-xs text-[#a1a1aa] leading-relaxed italic">{task.solucao || 'Nenhuma nota registrada.'}</p>
-            </div>
-          </div>
-
-          {/* Conteúdo Expansível */}
-          {isExpanded ? (
-            <div className="flex flex-col gap-6 pt-4 border-t border-white/5 animate-in slide-in-from-top-2 duration-300">
-              {/* Checklist */}
-              <div className="space-y-3">
-                <p className="text-[10px] uppercase tracking-widest text-[#52525b] font-black ml-1">Status Finalização</p>
-                <div className="grid grid-cols-1 gap-2.5">
-                  {[
-                    { id: 'resolvido', label: 'Resolvido' },
-                    { id: 'planilha', label: 'Planilha' }
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={(e) => { e.stopPropagation(); toggleChecklist(task, item.id); }}
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all text-sm group ${
-                        task[item.id as keyof Task] === 'finalizado'
-                          ? 'bg-white/10 border-white/20 text-white'
-                          : 'bg-transparent border-white/5 text-[#52525b] hover:border-white/20 hover:text-[#a1a1aa]'
-                      }`}
-                    >
-                      <span className="font-medium uppercase text-[11px] tracking-widest font-black">{item.label}</span>
-                      {task[item.id as keyof Task] === 'finalizado' ? (
-                        <CheckCircle2 className="w-5 h-5 text-blue-500" />
-                      ) : (
-                        <Circle className="w-5 h-5 opacity-20 group-hover:opacity-100 group-hover:scale-110 transition-all" />
-                      )}
-                    </button>
-                  ))}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Lado Esquerdo: Info Principal */}
+          <div className="flex-1 flex flex-col gap-6">
+            {/* Header do Card */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/5 rounded-2xl border border-white/5 group-hover:scale-110 transition-transform">
+                  <ExternalLink className="w-6 h-6 text-[#a1a1aa]" />
+                </div>
+                <div className="flex flex-col">
+                   <h3 className="text-lg font-bold text-white group-hover:text-white transition-colors">
+                     {task.solicitante || 'Sem Solicitante'}
+                   </h3>
+                   <div className="flex items-center gap-2 mt-1">
+                     <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider rounded-md border border-blue-500/20">
+                       GERAL
+                     </span>
+                     <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${
+                       task.status === 'pendente' 
+                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
+                        : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                     }`}>
+                       {task.status === 'pendente' ? 'Pendente' : 'Resolvida'}
+                     </span>
+                   </div>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="flex items-center justify-center pt-2 opacity-20 hover:opacity-100 transition-opacity">
-               <ChevronDown className="w-4 h-4" />
-            </div>
-          )}
 
-          {/* Rodapé: Data/Hora */}
-          <div className="flex items-center justify-between pt-1 border-t border-white/5 opacity-40 group-hover:opacity-100 transition-opacity">
-            <div className="flex items-center gap-2">
-              <Clock className="w-3 h-3" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">
-                {new Date(task.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-              </span>
+            {/* Grid de Informações */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2 bg-white/5 p-4 rounded-2xl border border-white/5">
+                <div className="flex items-center gap-2 text-[#52525b]">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span className="text-[10px] uppercase font-black tracking-widest">Problema Reclamado</span>
+                </div>
+                <p className="text-xs text-[#a1a1aa] leading-relaxed line-clamp-3">{task.problema_reclamado}</p>
+              </div>
+
+              <div className="flex flex-col gap-2 bg-white/5 p-4 rounded-2xl border border-white/5">
+                <div className="flex items-center gap-2 text-[#52525b]">
+                  <Lightbulb className="w-3.5 h-3.5" />
+                  <span className="text-[10px] uppercase font-black tracking-widest">Solução Aplicada</span>
+                </div>
+                <p className="text-xs text-[#a1a1aa] leading-relaxed line-clamp-3 italic">
+                  {task.solucao || 'Nenhuma nota técnica registrada.'}
+                </p>
+              </div>
             </div>
-            {isExpanded && (
-               <div className="flex items-center gap-1 text-[10px] uppercase font-black text-[#52525b]">
-                 RECOLHER <ChevronUp className="w-3 h-3" />
-               </div>
-            )}
+
+            <div className="flex items-center gap-4 text-[10px] font-bold text-[#52525b] uppercase tracking-widest">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3 h-3" />
+                {new Date(task.created_at).toLocaleDateString('pt-BR')} às {new Date(task.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Hexagon className="w-3 h-3" />
+                ID: {task.id.slice(0, 8)}
+              </div>
+            </div>
+          </div>
+
+          {/* Divisor Vertical (Apenas Desktop) */}
+          <div className="hidden lg:block w-px bg-white/5" />
+
+          {/* Lado Direito: Checklist (Sempre Visível) */}
+          <div className="lg:w-64 flex flex-col gap-3">
+            <span className="text-[10px] uppercase font-black text-[#52525b] tracking-tighter mb-1">PROTOCOLO DE CONCLUSÃO</span>
+            <div className="flex flex-col gap-2">
+              {[
+                { id: 'resolvido', label: 'Resolvido' },
+                { id: 'planilha', label: 'Planilha' }
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={(e) => { e.stopPropagation(); toggleChecklist(task, item.id); }}
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all text-xs group/item ${
+                    task[item.id as keyof Task] === 'finalizado'
+                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                      : 'bg-[#18181b] border-white/5 text-[#52525b] hover:border-white/10 hover:text-[#a1a1aa]'
+                  }`}
+                >
+                  <span className="font-semibold">{item.label}</span>
+                  {task[item.id as keyof Task] === 'finalizado' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border-2 border-white/10 group-hover/item:border-white/20" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Ações */}
+          <div className="flex lg:flex-col items-center gap-2 lg:justify-start">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setEditingTask(task); }}
+              className="flex-1 lg:flex-none p-3 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-2xl border border-cyan-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              title="Editar"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setDeletingId(task.id); }}
+              className="flex-1 lg:flex-none p-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-2xl border border-rose-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              title="Excluir"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
@@ -227,144 +251,96 @@ export default function OtherSolicitationList({ tasks, onUpdate }: { tasks: Task
   }
 
   return (
-    <div className="flex flex-col gap-8 w-full mt-8">
-      {/* Barra de Pesquisa */}
-      <div className="relative group max-w-2xl mx-auto w-full">
-        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-          <Search className="w-5 h-5 text-[#52525b] group-focus-within:text-white transition-colors" />
+    <div className="flex flex-col gap-8 w-full mt-2">
+      {/* Search and Filter Header */}
+      <div className="flex flex-col md:flex-row gap-4 items-end bg-[#18181b] p-6 rounded-3xl border border-white/5 shadow-xl">
+        <div className="flex-1 flex flex-col gap-2 w-full">
+          <label className="text-xs font-bold text-[#52525b] ml-1 uppercase tracking-widest">Buscar Solicitações:</label>
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#52525b] group-focus-within:text-white transition-colors" />
+            <input
+              type="text"
+              placeholder="Nome do solicitante, problema ou ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#09090b] border border-white/5 text-white pl-11 pr-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5 focus:bg-[#18181b] focus:border-white/10 transition-all placeholder:text-[#52525b] text-sm"
+            />
+          </div>
         </div>
-        <input
-          type="text"
-          placeholder="Pesquisar por Solicitante, Problema ou Solução..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 text-white pl-12 pr-12 py-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/10 focus:bg-white/10 transition-all placeholder:text-[#52525b] placeholder:text-sm"
-        />
-        {searchTerm && (
-          <button
-            onClick={() => setSearchTerm('')}
-            className="absolute inset-y-0 right-4 flex items-center text-[#52525b] hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+        <div className="flex flex-col gap-2 w-full md:w-auto">
+          <label className="text-xs font-bold text-[#52525b] ml-1 uppercase tracking-widest">Filtro de Status:</label>
+          <div className="flex p-1 bg-[#09090b] rounded-2xl border border-white/5">
+            <button
+              onClick={() => setStatusFilter('pendente')}
+              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+                statusFilter === 'pendente' 
+                  ? 'bg-[#18181b] text-white shadow-xl border border-white/5' 
+                  : 'text-[#52525b] hover:text-[#a1a1aa]'
+              }`}
+            >
+              Pendentes
+            </button>
+            <button
+              onClick={() => setStatusFilter('finalizado')}
+              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+                statusFilter === 'finalizado' 
+                  ? 'bg-[#18181b] text-white shadow-xl border border-white/5' 
+                  : 'text-[#52525b] hover:text-[#a1a1aa]'
+              }`}
+            >
+              Resolvidas
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* List Container */}
+      <div className="flex flex-col gap-4 min-h-[400px]">
+        {filteredTasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-[#18181b]/50 rounded-3xl border border-white/5 border-dashed gap-4">
+            <div className="p-4 bg-white/5 rounded-full">
+               <AlertCircle className="w-8 h-8 text-[#52525b]" />
+            </div>
+            <div className="text-center">
+              <p className="text-white font-bold">Nenhuma solicitação encontrada</p>
+              <p className="text-[#52525b] text-sm">Tente ajustar seus termos de busca ou filtros.</p>
+            </div>
+          </div>
+        ) : (
+          filteredTasks.map(renderTaskCard)
         )}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-4 w-full">
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-3 px-2">
-          <Clock className="w-5 h-5 text-blue-400" />
-          <h2 className="text-xl font-bold">Solicitações Pendentes</h2>
-          <span className="bg-white/10 px-2.5 py-1 rounded-lg text-xs font-black">{pendingTasks.length}</span>
-        </div>
+      <Modal isOpen={!!deletingId} onClose={() => setDeletingId(null)} title="Excluir Solicitação">
         <div className="flex flex-col gap-6">
-          {pendingTasks.length === 0 ? (
-            <div className="p-16 text-center border-2 border-dashed border-white/5 rounded-[48px] text-[#52525b] text-sm font-black uppercase tracking-widest">
-              {searchTerm ? 'Nenhum resultado encontrado.' : 'Tudo Resolvido.'}
-            </div>
-          ) : (
-            pendingTasks.map(renderTaskCard)
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-3 px-2">
-          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-          <h2 className="text-xl font-bold">Histórico Resolvido</h2>
-          <span className="bg-white/10 px-2.5 py-1 rounded-lg text-xs font-black">{finishedTasks.length}</span>
-        </div>
-        <div className="flex flex-col gap-6 opacity-60 hover:opacity-100 transition-opacity duration-500 text-center">
-          {finishedTasks.length === 0 ? (
-            <div className="p-16 text-center border-2 border-dashed border-white/5 rounded-[48px] text-[#52525b] text-sm font-black uppercase tracking-widest">
-              {searchTerm ? 'Nenhum resultado encontrado.' : 'Sem histórico.'}
-            </div>
-          ) : (
-            finishedTasks.map(renderTaskCard)
-          )}
-        </div>
-      </div>
-    </div>
-
-      {/* Pop-up Exclusão */}
-      <Modal 
-        isOpen={!!deletingId} 
-        onClose={() => setDeletingId(null)} 
-        title="Deseja realmente excluir a tarefa pendente?"
-      >
-        <div className="flex flex-col gap-8 pt-4">
-          <div className="flex items-center gap-4 p-6 rounded-3xl bg-red-500/10 border border-red-500/20">
-            <AlertCircle className="w-8 h-8 text-red-500" />
-            <p className="text-sm text-red-200/80 leading-relaxed">Esta ação não poderá ser desfeita. Todos os dados da solicitação serão removidos.</p>
-          </div>
-          
+          <p className="text-[#a1a1aa]">Tem certeza que deseja excluir esta solicitação? Esta ação não pode ser desfeita.</p>
           <div className="flex gap-4">
-            <button
-              onClick={confirmDelete}
-              disabled={loading}
-              className="flex-1 bg-red-500 hover:bg-red-400 text-white font-black py-4 rounded-[28px] transition-all flex items-center justify-center gap-2 shadow-2xl shadow-red-500/20"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'SIM, EXCLUIR'}
-            </button>
-            <button
-              onClick={() => setDeletingId(null)}
-              className="flex-1 bg-white/5 hover:bg-white/10 text-white font-black py-4 rounded-[28px] border border-white/5 transition-all"
-            >
-              NÃO, MANTER
-            </button>
+            <button onClick={() => setDeletingId(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all">Cancelar</button>
+            <button onClick={confirmDelete} className="flex-1 py-3 rounded-2xl bg-rose-500 text-white font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20">Excluir</button>
           </div>
         </div>
       </Modal>
 
-      {/* Pop-up Edição */}
-      <Modal 
-        isOpen={!!editingTask} 
-        onClose={() => setEditingTask(null)} 
-        title="Editar Solicitação Geral"
-      >
-        <form onSubmit={handleEditSave} className="flex flex-col gap-6 pt-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase font-black text-[#52525b]">Solicitante</label>
-            <input
-              type="text" required
-              value={editingTask?.solicitante || ''}
-              onChange={(e) => setEditingTask({...editingTask!, solicitante: e.target.value})}
-              className="todo-input px-4 py-3 rounded-2xl text-sm"
-            />
+      <Modal isOpen={!!editingTask} onClose={() => setEditingTask(null)} title="Editar Solicitação">
+        <form onSubmit={handleEditSave} className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-[#52525b] ml-1 uppercase">Solicitante</label>
+              <input type="text" value={editingTask?.solicitante || ''} onChange={(e) => setEditingTask({...editingTask!, solicitante: e.target.value})} className="bg-[#09090b] border border-white/5 text-white px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-[#52525b] ml-1 uppercase">Problema</label>
+              <textarea rows={3} value={editingTask?.problema_reclamado || ''} onChange={(e) => setEditingTask({...editingTask!, problema_reclamado: e.target.value})} className="bg-[#09090b] border border-white/5 text-white px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5 resize-none" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-[#52525b] ml-1 uppercase">Solução</label>
+              <textarea rows={3} value={editingTask?.solucao || ''} onChange={(e) => setEditingTask({...editingTask!, solucao: e.target.value})} className="bg-[#09090b] border border-white/5 text-white px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/5 resize-none" />
+            </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase font-black text-[#52525b]">Problema</label>
-            <textarea
-              required rows={2}
-              value={editingTask?.problema_reclamado || ''}
-              onChange={(e) => setEditingTask({...editingTask!, problema_reclamado: e.target.value})}
-              className="todo-input px-4 py-3 rounded-2xl text-sm resize-none"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase font-black text-[#52525b]">Solução</label>
-            <textarea
-              rows={2}
-              value={editingTask?.solucao || ''}
-              onChange={(e) => setEditingTask({...editingTask!, solucao: e.target.value})}
-              className="todo-input px-4 py-3 rounded-2xl text-sm resize-none"
-            />
-          </div>
-          
-          <div className="flex gap-4 pt-4 border-t border-white/5">
-            <button
-              type="submit" disabled={loading}
-              className="flex-1 bg-white text-black font-black py-4 rounded-[28px] transition-all flex items-center justify-center gap-2 active:scale-95"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : 'SALVAR ALTERAÇÕES'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditingTask(null)}
-              className="flex-1 bg-white/5 hover:bg-white/10 text-white font-black py-4 rounded-[28px] border border-white/5"
-            >
-              NÃO, CANCELAR
-            </button>
+          <div className="flex gap-4">
+            <button type="button" onClick={() => setEditingTask(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all">Cancelar</button>
+            <button type="submit" className="flex-1 py-3 rounded-2xl bg-white text-black font-bold hover:bg-[#e4e4e7] transition-all shadow-lg">Salvar Alterações</button>
           </div>
         </form>
       </Modal>

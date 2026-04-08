@@ -31,35 +31,31 @@ export default function SealRemovalPage() {
   }, [fetchTasks])
 
   return (
-    <div className="flex flex-col gap-8 max-w-7xl mx-auto animate-in fade-in duration-700">
+    <div className="flex flex-col gap-8 max-w-7xl mx-auto animate-in fade-in duration-700 min-h-screen">
       <div className="flex flex-col gap-2 border-b border-white/5 pb-8">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-red-500 rounded-lg shadow-lg shadow-red-500/20">
-            <Trash2 className="w-6 h-6 text-white" />
+          <div className="p-2 bg-white rounded-xl shadow-sm border border-white/10">
+            <Trash2 className="w-6 h-6 text-black" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-white">Retirada de Lacre</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight text-white">Retirada de Lacre</h1>
         </div>
-        <p className="text-[#a1a1aa] text-sm max-w-2xl ml-1 font-medium">
-          Módulo especializado para remoção de lacres em massa e gerenciamento de lotes pendentes.
+        <p className="text-[#a1a1aa] text-sm max-w-2xl ml-1">
+          Módulo especializado para remoção de lacres em massa e gerenciamento de lotes. Acompanhe a desativação técnica e os protocolos sistêmicos.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-12">
+        {/* Formulário de Cadastro */}
         <SealRemovalForm onTaskAdded={fetchTasks} />
 
+        {/* Listagem Separada por Status */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-white/20" />
-            <p className="text-[10px] text-[#52525b] uppercase tracking-[0.2em] font-black">Sincronizando Retidaras...</p>
+            <p className="text-[#52525b] text-xs uppercase tracking-widest font-bold">Carregando lotes de retirada...</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 mb-2 px-2 text-[10px] text-[#52525b] font-bold uppercase tracking-widest">
-              <Info className="w-3 h-3" />
-              <span>DICA: Clique no status (ATIVO/DESATIVADO) para alternar rapidamente as cores.</span>
-            </div>
-            <SealRemovalList tasks={tasks} onUpdate={fetchTasks} />
-          </div>
+          <SealRemovalList tasks={tasks} onUpdate={fetchTasks} />
         )}
       </div>
     </div>
