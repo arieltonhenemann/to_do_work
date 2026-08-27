@@ -46,15 +46,29 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  // Overrides otimistas: aplicam o visual imediatamente no clique (sem esperar a rede)
+  const [optimistic, setOptimistic] = useState<Record<string, Partial<Task>>>({})
+
   const toggleChecklist = async (task: Task, field: string) => {
-    const currentValue = task[field as keyof Task]
+    const currentValue = optimistic[task.id]?.[field as keyof Task] ?? task[field as keyof Task]
     const newValue = currentValue === 'pendente' ? 'finalizado' : 'pendente'
-    
-    // Calcular novo status geral
+
+    // Atualiza localmente no mesmo instante para dar feedback imediato
+    const applyOptimistic = (prev: Record<string, Partial<Task>>) => ({
+      ...prev,
+      [task.id]: { ...prev[task.id], [field]: newValue },
+    })
+    setOptimistic(applyOptimistic)
+
+    // Calcular novo status geral com base na versão otimista
     const checklistFields = ['mk_solutions', 'geosite', 'mapeamento', 'sincronizacao']
-    const updatedValues = { ...task, [field]: newValue }
+    const updatedValues = { ...task, ...(optimistic[task.id] || {}), [field]: newValue }
     const allFinished = checklistFields.every(f => updatedValues[f as keyof Task] === 'finalizado')
     const newOverallStatus = allFinished ? 'finalizado' : 'pendente'
+    setOptimistic(prev => ({
+      ...prev,
+      [task.id]: { ...prev[task.id], status: newOverallStatus },
+    }))
 
     const { error } = await supabase
       .from('tasks')
@@ -63,6 +77,11 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
 
     if (error) {
       console.error('Erro ao atualizar:', error.message)
+      setOptimistic(prev => {
+        const next = { ...prev }
+        delete next[task.id]
+        return next
+      })
     } else {
       onUpdate()
     }
@@ -127,6 +146,7 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
   })
 
   const renderTaskCard = (task: Task) => {
+    const displayTask: Task = { ...task, ...(optimistic[task.id] || {}) }
     return (
       <div 
         key={task.id} 
@@ -149,13 +169,13 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
                      <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider rounded-md border border-blue-500/20">
                        INSTALAÇÃO
                      </span>
-                     <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${
-                       task.status === 'pendente' 
-                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 glow-amber' 
-                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 glow-emerald'
-                     }`}>
-                       {task.status.toUpperCase()}
-                     </span>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${
+                        displayTask.status === 'pendente' 
+                         ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 glow-amber' 
+                         : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 glow-emerald'
+                      }`}>
+                        {displayTask.status.toUpperCase()}
+                      </span>
                    </div>
                 </div>
               </div>
@@ -226,13 +246,13 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
                   key={item.id}
                   onClick={(e) => { e.stopPropagation(); toggleChecklist(task, item.id); }}
                   className={`flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs group/item ${
-                    task[item.id as keyof Task] === 'finalizado'
+                    displayTask[item.id as keyof Task] === 'finalizado'
                       ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                       : 'bg-[#18181b] border-white/5 text-[#52525b] hover:border-white/10 hover:text-[#a1a1aa]'
                   }`}
                 >
                   <span className="font-semibold">{item.label}</span>
-                  {task[item.id as keyof Task] === 'finalizado' ? (
+                  {displayTask[item.id as keyof Task] === 'finalizado' ? (
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   ) : (
                     <div className="w-4 h-4 rounded-full border-2 border-white/10 group-hover/item:border-white/20" />
