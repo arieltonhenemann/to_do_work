@@ -4,22 +4,13 @@ import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { 
   CheckCircle2, 
-  Circle, 
-  User, 
   Trash2,
   Clock,
-  MapPin,
   Pencil,
   AlertCircle,
-  Loader2,
-  Plus,
   Hexagon,
-  ChevronDown,
-  ChevronUp,
   Search,
-  X,
-  Clipboard,
-  Check
+  Clipboard
 } from 'lucide-react'
 import Modal from './modal'
 
@@ -40,7 +31,6 @@ type Task = {
   mk_solutions: 'pendente' | 'finalizado'
   mapeamento: 'pendente' | 'finalizado'
   geosite: 'pendente' | 'finalizado'
-  planilha: 'pendente' | 'finalizado'
   status: 'pendente' | 'finalizado'
 }
 
@@ -53,7 +43,6 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
   const [quickInfoTask, setQuickInfoTask] = useState<Task | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [copied, setCopied] = useState(false)
-  const [loading, setLoading] = useState(false)
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -65,7 +54,7 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
     const currentValue = task[field as keyof Task]
     const newValue = currentValue === 'pendente' ? 'finalizado' : 'pendente'
     
-    const checklistFields = ['mk_solutions', 'mapeamento', 'geosite', 'planilha']
+    const checklistFields = ['mk_solutions', 'mapeamento', 'geosite']
     const updatedValues = { ...task, [field]: newValue }
     const allFinished = checklistFields.every(f => updatedValues[f as keyof Task] === 'finalizado')
     const newOverallStatus = allFinished ? 'finalizado' : 'pendente'
@@ -82,30 +71,8 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
     }
   }
 
-  const finishAllItems = async (task: Task) => {
-    const checklistFields = {
-      mk_solutions: 'finalizado',
-      mapeamento: 'finalizado',
-      geosite: 'finalizado',
-      planilha: 'finalizado',
-      status: 'finalizado'
-    }
-
-    const { error } = await supabase
-      .from('tasks')
-      .update(checklistFields)
-      .eq('id', task.id)
-
-    if (error) {
-      console.error('Erro ao finalizar todos:', error.message)
-    } else {
-      onUpdate()
-    }
-  }
-
   const confirmDeleteTask = async () => {
     if (!deletingId) return
-    setLoading(true)
     const { error } = await supabase.from('tasks').delete().eq('id', deletingId)
     if (error) {
       console.error('Erro ao excluir tarefa:', error.message)
@@ -113,14 +80,12 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
       onUpdate()
       setDeletingId(null)
     }
-    setLoading(false)
   }
 
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingTask) return
     
-    setLoading(true)
     const { error } = await supabase
       .from('tasks')
       .update({
@@ -136,7 +101,6 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
       onUpdate()
       setEditingTask(null)
     }
-    setLoading(false)
   }
 
   const updateSingleLacre = async (task: Task, lacreId: string, action: 'delete' | 'toggleStatus') => {
@@ -194,8 +158,8 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
                      </span>
                      <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${
                        task.status === 'pendente' 
-                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
-                        : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 glow-amber' 
+                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 glow-emerald'
                      }`}>
                        {task.status === 'pendente' ? 'Pendente' : 'Arquivado'}
                      </span>
@@ -263,9 +227,8 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
             <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
               {[
                 { id: 'mk_solutions', label: 'Mk Sol.' },
-                { id: 'mapeamento', label: 'Mapeam.' },
-                { id: 'geosite', label: 'Geosite' },
-                { id: 'planilha', label: 'Planilha' }
+                { id: 'mapeamento', label: 'Mapeamento' },
+                { id: 'geosite', label: 'Geosite' }
               ].map((item) => (
                 <button
                   key={item.id}
@@ -291,14 +254,14 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
           <div className="flex lg:flex-col items-center gap-2 lg:justify-start">
             <button 
               onClick={(e) => { e.stopPropagation(); setEditingTask(task); }}
-              className="flex-1 lg:flex-none p-3 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-2xl border border-cyan-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              className="flex-1 lg:flex-none p-3 bg-violet-500/10 text-violet-400 hover:bg-violet-500 hover:text-white rounded-2xl border border-violet-500/20 transition-all hover:shadow-lg hover:shadow-violet-500/20 flex items-center justify-center gap-2 text-xs font-bold"
               title="Editar"
             >
               <Pencil className="w-4 h-4" />
             </button>
             <button 
               onClick={(e) => { e.stopPropagation(); setDeletingId(task.id); }}
-              className="flex-1 lg:flex-none p-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-2xl border border-rose-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              className="flex-1 lg:flex-none p-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-2xl border border-rose-500/20 transition-all hover:shadow-lg hover:shadow-rose-500/20 flex items-center justify-center gap-2 text-xs font-bold"
               title="Excluir"
             >
               <Trash2 className="w-4 h-4" />
@@ -312,7 +275,7 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
   return (
     <div className="flex flex-col gap-8 w-full mt-2">
       {/* Search and Filter Header */}
-      <div className="flex flex-col md:flex-row gap-4 items-end bg-[#18181b] p-6 rounded-3xl border border-white/5 shadow-xl">
+      <div className="flex flex-col md:flex-row gap-4 items-end glass-card-accent p-6 rounded-3xl shadow-xl">
         <div className="flex-1 flex flex-col gap-2 w-full">
           <label className="text-xs font-bold text-[#52525b] ml-1 uppercase tracking-widest">Buscar Retiradas:</label>
           <div className="relative group">
@@ -334,7 +297,7 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
               onClick={() => setStatusFilter('pendente')}
               className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
                 statusFilter === 'pendente' 
-                  ? 'bg-[#18181b] text-white shadow-xl border border-white/5' 
+                  ? 'bg-violet-500/10 text-violet-400 shadow-lg border border-violet-500/20' 
                   : 'text-[#52525b] hover:text-[#a1a1aa]'
               }`}
             >
@@ -358,7 +321,7 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
       <div className="flex flex-col gap-4 min-h-[400px]">
         {filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-[#18181b]/50 rounded-3xl border border-white/5 border-dashed gap-4">
-            <div className="p-4 bg-white/5 rounded-full">
+            <div className="p-4 bg-violet-500/10 rounded-full border border-violet-500/20">
                <AlertCircle className="w-8 h-8 text-[#52525b]" />
             </div>
             <div className="text-center">
@@ -375,7 +338,7 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
         <div className="flex flex-col gap-6">
           <p className="text-[#a1a1aa]">Tem certeza que deseja excluir este lote de retirada? Esta ação apagará todos os lacres vinculados.</p>
           <div className="flex gap-4">
-            <button onClick={() => setDeletingId(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all">Cancelar</button>
+            <button onClick={() => setDeletingId(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 border border-white/5 transition-all">Cancelar</button>
             <button onClick={confirmDeleteTask} className="flex-1 py-3 rounded-2xl bg-rose-500 text-white font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20">Excluir Lote</button>
           </div>
         </div>
@@ -405,10 +368,12 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
                 {editingTask?.lacres_data.map((l, i) => (
                   <div key={l.id} className="grid grid-cols-12 gap-2 bg-[#09090b] p-3 rounded-2xl border border-white/5">
                     <input className="col-span-5 bg-white/5 rounded-lg px-2 py-1.5 text-xs text-white border border-transparent focus:border-white/10 outline-none" placeholder="Lacre" value={l.lacre} onChange={(e) => {
-                      const newData = [...editingTask.lacres_data]; newData[i].lacre = e.target.value; setEditingTask({...editingTask, lacres_data: newData});
+                      const newData = editingTask.lacres_data.map((item, idx) => idx === i ? { ...item, lacre: e.target.value } : item);
+                      setEditingTask({...editingTask, lacres_data: newData});
                     }} />
                     <input className="col-span-6 bg-white/5 rounded-lg px-2 py-1.5 text-xs text-white border border-transparent focus:border-white/10 outline-none" placeholder="Cliente" value={l.cliente} onChange={(e) => {
-                      const newData = [...editingTask.lacres_data]; newData[i].cliente = e.target.value; setEditingTask({...editingTask, lacres_data: newData});
+                      const newData = editingTask.lacres_data.map((item, idx) => idx === i ? { ...item, cliente: e.target.value } : item);
+                      setEditingTask({...editingTask, lacres_data: newData});
                     }} />
                     <button type="button" onClick={() => {
                       const newData = editingTask.lacres_data.filter((_, idx) => idx !== i); setEditingTask({...editingTask, lacres_data: newData});
@@ -421,8 +386,8 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
           </div>
 
           <div className="flex gap-4">
-            <button type="button" onClick={() => setEditingTask(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all">Cancelar</button>
-            <button type="submit" className="flex-1 py-3 rounded-2xl bg-white text-black font-bold hover:bg-[#e4e4e7] transition-all shadow-lg">Salvar Lote</button>
+            <button type="button" onClick={() => setEditingTask(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 border border-white/5 transition-all">Cancelar</button>
+            <button type="submit" className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20">Salvar Lote</button>
           </div>
         </form>
       </Modal>

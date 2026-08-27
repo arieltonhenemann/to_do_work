@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import SealRemovalForm from '@/components/seal-removal-form'
 import SealRemovalList from '@/components/seal-removal-list'
-import { Trash2, Loader2, Info } from 'lucide-react'
+import { Trash2, Loader2 } from 'lucide-react'
 
 export default function SealRemovalPage() {
-  const [tasks, setTasks] = useState<any[]>([])
+  const [tasks, setTasks] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -27,6 +27,7 @@ export default function SealRemovalPage() {
   }, [supabase])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchTasks()
   }, [fetchTasks])
 
@@ -34,8 +35,8 @@ export default function SealRemovalPage() {
     <div className="flex flex-col gap-8 max-w-7xl mx-auto animate-in fade-in duration-700 min-h-screen">
       <div className="flex flex-col gap-2 border-b border-white/5 pb-8">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-white rounded-xl shadow-sm border border-white/10">
-            <Trash2 className="w-6 h-6 text-black" />
+          <div className="p-2 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl shadow-lg shadow-violet-500/20">
+            <Trash2 className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight text-white">Retirada de Lacre</h1>
         </div>
@@ -51,7 +52,7 @@ export default function SealRemovalPage() {
         {/* Listagem Separada por Status */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="w-8 h-8 animate-spin text-white/20" />
+            <Loader2 className="w-8 h-8 animate-spin text-violet-400/30" />
             <p className="text-[#52525b] text-xs uppercase tracking-widest font-bold">Carregando lotes de retirada...</p>
           </div>
         ) : (

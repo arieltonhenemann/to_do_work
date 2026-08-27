@@ -11,16 +11,32 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react'
-import * as XLSX from 'xlsx'
+type LacreEntry = {
+  lacre: string
+  cliente: string
+  status: string
+}
 
-type Task = any // Usando any para facilitar o mapeamento de tipos dinâmicos no Excel
+type Task = {
+  id: string
+  created_at: string
+  type: string
+  status: string
+  tecnico?: string
+  solicitante?: string
+  cliente?: string
+  cto?: string
+  mk_solutions?: string
+  geosite?: string
+  lacres_data?: LacreEntry[]
+  [key: string]: unknown
+}
 
 const TASK_TYPES = [
   { id: 'instalacao', label: 'Instalação' },
   { id: 'manutencao', label: 'Manutenção' },
   { id: 'solicitacao', label: 'Solicitações' },
-  { id: 'retirada_lacre', label: 'Retirada de Lacre' },
-  { id: 'demais_solicitacoes', label: 'Demais Solicitações' }
+  { id: 'retirada_lacre', label: 'Retirada de Lacre' }
 ]
 
 export default function ReportsPage() {
@@ -59,8 +75,10 @@ export default function ReportsPage() {
     setLoading(false)
   }
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (tasks.length === 0) return
+
+    const XLSX = await import('xlsx')
 
     // Mapear os dados para um formato amigável ao Excel
     const formattedData = tasks.map(t => {
@@ -72,13 +90,12 @@ export default function ReportsPage() {
         'Técnico': t.tecnico || t.solicitante || 'N/A',
         'Cliente/Solicitante': t.cliente || t.solicitante || 'N/A',
         'CTO': t.cto || 'N/A',
-        'Lacre/Equipamento': t.lacre || t.equipamento || 'N/A',
-        'Checklist': `Mk: ${t.mk_solutions}, Geosite: ${t.geosite}, Planilha: ${t.planilha}`
+        'Checklist': `Mk: ${t.mk_solutions}, Geosite: ${t.geosite}`
       }
 
       // Tratamento especial para Retirada de Lacre (JSONB)
       if (t.type === 'retirada_lacre' && t.lacres_data) {
-        const details = t.lacres_data.map((l: any) => 
+        const details = t.lacres_data.map((l: LacreEntry) => 
           `[Lacre: ${l.lacre}, Cliente: ${l.cliente}, Status: ${l.status}]`
         ).join(' | ')
         return { ...baseData, 'Detalhes Lacres': details }
@@ -99,7 +116,7 @@ export default function ReportsPage() {
     <div className="flex flex-col gap-8 max-w-6xl mx-auto animate-in fade-in duration-700">
       <div className="flex flex-col gap-2 border-b border-white/5 pb-8">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-500 rounded-lg shadow-lg shadow-emerald-500/20">
+          <div className="p-2 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg shadow-lg shadow-violet-500/20">
             <FileSpreadsheet className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-white">Relatórios</h1>
@@ -110,7 +127,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Filtros */}
-      <div className="glass-card p-8 rounded-[40px] border border-white/5 flex flex-col md:flex-row items-end gap-6 shadow-2xl">
+      <div className="glass-card-accent p-8 rounded-[40px] flex flex-col md:flex-row items-end gap-6 shadow-2xl">
         <div className="flex-1 flex flex-col gap-2">
           <label className="text-[10px] uppercase font-black text-[#52525b] ml-1 tracking-widest flex items-center gap-2">
             <Calendar className="w-3 h-3" /> Data Inicial
@@ -119,7 +136,7 @@ export default function ReportsPage() {
             type="date" 
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="todo-input px-5 py-3.5 rounded-2xl text-sm transition-all focus:ring-4 focus:ring-emerald-500/10"
+            className="todo-input px-5 py-3.5 rounded-2xl text-sm transition-all focus:ring-4 focus:ring-violet-500/15"
           />
         </div>
 
@@ -131,7 +148,7 @@ export default function ReportsPage() {
             type="date" 
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="todo-input px-5 py-3.5 rounded-2xl text-sm transition-all focus:ring-4 focus:ring-emerald-500/10"
+            className="todo-input px-5 py-3.5 rounded-2xl text-sm transition-all focus:ring-4 focus:ring-violet-500/15"
           />
         </div>
 
@@ -142,7 +159,7 @@ export default function ReportsPage() {
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="todo-input px-5 py-3.5 rounded-2xl text-sm transition-all focus:ring-4 focus:ring-emerald-500/10 bg-black/20"
+            className="todo-input px-5 py-3.5 rounded-2xl text-sm transition-all focus:ring-4 focus:ring-violet-500/15 bg-black/20"
           >
             <option value="todos">TUDO (PEND. & FIN.)</option>
             <option value="pendente">SOMENTE PENDENTES</option>
@@ -153,7 +170,7 @@ export default function ReportsPage() {
         <button 
           onClick={fetchTasksForReport}
           disabled={loading || selectedTypes.length === 0}
-          className="bg-white text-black h-[52px] px-8 rounded-2xl font-black text-xs hover:bg-[#e4e4e7] transition-all flex items-center gap-3 active:scale-95 disabled:opacity-50"
+          className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white h-[52px] px-8 rounded-2xl font-black text-xs hover:from-violet-500 hover:to-indigo-500 transition-all flex items-center gap-3 active:scale-95 disabled:opacity-50 shadow-lg shadow-violet-500/20"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           GERAR RELATÓRIO
@@ -169,13 +186,13 @@ export default function ReportsPage() {
             <div className="flex gap-4">
               <button 
                 onClick={() => setSelectedTypes(TASK_TYPES.map(t => t.id))}
-                className="text-[10px] font-black text-emerald-500 hover:text-emerald-400 uppercase tracking-widest"
+                className="text-[10px] font-black text-violet-400 hover:text-violet-300 uppercase tracking-widest"
               >
                 Selecionar Tudo
               </button>
               <button 
                 onClick={() => setSelectedTypes([])}
-                className="text-[10px] font-black text-red-500 hover:text-red-400 uppercase tracking-widest"
+                className="text-[10px] font-black text-rose-400 hover:text-rose-300 uppercase tracking-widest"
               >
                 Limpar Tudo
               </button>
@@ -194,7 +211,7 @@ export default function ReportsPage() {
                   }}
                   className={`px-6 py-3 rounded-2xl text-xs font-black transition-all border ${
                     isSelected 
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-500/5' 
+                      ? 'bg-violet-500/10 border-violet-500/30 text-violet-400 shadow-lg shadow-violet-500/5' 
                       : 'bg-white/5 border-white/5 text-[#52525b] hover:bg-white/10 hover:border-white/10'
                   }`}
                 >
@@ -213,7 +230,7 @@ export default function ReportsPage() {
         <div className="flex flex-col gap-6 animate-in slide-in-from-bottom-6 duration-700">
            <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-3">
-                 <CheckCircle2 className={`w-5 h-5 ${tasks.length > 0 ? 'text-emerald-500' : 'text-[#52525b]'}`} />
+                 <CheckCircle2 className={`w-5 h-5 ${tasks.length > 0 ? 'text-violet-400' : 'text-[#52525b]'}`} />
                  <span className="text-sm font-bold text-white">
                    {tasks.length > 0 ? `${tasks.length} registros encontrados neste período` : 'Nenhum dado encontrado para estas datas'}
                  </span>
@@ -222,7 +239,7 @@ export default function ReportsPage() {
               {tasks.length > 0 && (
                 <button 
                   onClick={exportToExcel}
-                  className="flex items-center gap-3 bg-emerald-500 text-white font-black px-8 py-4 rounded-[28px] text-xs hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 active:scale-95"
+                  className="flex items-center gap-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black px-8 py-4 rounded-[28px] text-xs hover:from-violet-500 hover:to-indigo-500 transition-all shadow-xl shadow-violet-500/20 active:scale-95"
                 >
                    <Download className="w-4 h-4" />
                    EXPORTAR PARA EXCEL (.XLSX)
@@ -259,7 +276,7 @@ export default function ReportsPage() {
                             <td className="py-4 px-2">{t.tecnico || t.solicitante || 'N/A'}</td>
                             <td className="py-4 px-2 text-white font-bold">{t.cliente || t.solicitante || 'N/A'}</td>
                             <td className="py-4 px-2">
-                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${t.status === 'finalizado' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${t.status === 'finalizado' ? 'bg-emerald-500/10 text-emerald-400 glow-emerald' : 'bg-amber-500/10 text-amber-400 glow-amber'}`}>
                                  {t.status.toUpperCase()}
                               </span>
                             </td>

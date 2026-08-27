@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import { 
@@ -19,6 +19,13 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current)
+    }
+  }, [])
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,7 +46,7 @@ export default function ResetPasswordPage() {
       setLoading(false)
     } else {
       setSuccess(true)
-      setTimeout(() => {
+      redirectTimer.current = setTimeout(() => {
         router.push('/login')
       }, 3000)
     }
@@ -50,8 +57,8 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md animate-in fade-in zoom-in duration-700">
         <div className="glass-card p-10 rounded-[48px] border border-white/5 shadow-2xl">
           <div className="flex flex-col items-center gap-6 mb-10">
-            <div className="w-16 h-16 rounded-3xl bg-white flex items-center justify-center shadow-2xl shadow-white/10">
-              <Lock className="w-8 h-8 text-black" />
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
+              <Lock className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-black text-white italic uppercase tracking-tight">Redefinir Senha</h1>
           </div>
@@ -89,7 +96,7 @@ export default function ResetPasswordPage() {
 
               <button
                 type="submit" disabled={loading}
-                className="w-full bg-white text-black py-4 rounded-[28px] font-black text-sm hover:bg-[#e4e4e7] transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 mt-4 shadow-2xl shadow-white/10"
+                className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-4 rounded-[28px] font-black text-sm hover:from-violet-500 hover:to-indigo-500 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 mt-4 shadow-lg shadow-violet-500/25"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>ATUALIZAR SENHA <ArrowRight className="w-4 h-4" /></>}
               </button>

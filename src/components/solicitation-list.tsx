@@ -4,19 +4,14 @@ import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { 
   CheckCircle2, 
-  Circle, 
   Trash2,
   Clock,
   MessageSquare,
   Lightbulb,
   Pencil,
   AlertCircle,
-  Loader2,
   Hexagon,
-  ChevronDown,
-  ChevronUp,
   Search,
-  X,
   ClipboardCheck
 } from 'lucide-react'
 import Modal from './modal'
@@ -29,7 +24,6 @@ type Task = {
   problema_reclamado: string
   solucao: string
   verificado: 'pendente' | 'finalizado'
-  planilha: 'pendente' | 'finalizado'
   status: 'pendente' | 'finalizado'
 }
 
@@ -40,14 +34,13 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [loading, setLoading] = useState(false)
 
   const toggleChecklist = async (task: Task, field: string) => {
     const currentValue = task[field as keyof Task]
     const newValue = currentValue === 'pendente' ? 'finalizado' : 'pendente'
     
     // Calcular novo status geral
-    const checklistFields = ['verificado', 'planilha']
+    const checklistFields = ['verificado']
     const updatedValues = { ...task, [field]: newValue }
     const allFinished = checklistFields.every(f => updatedValues[f as keyof Task] === 'finalizado')
     const newOverallStatus = allFinished ? 'finalizado' : 'pendente'
@@ -64,28 +57,8 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
     }
   }
 
-  const finishAllItems = async (task: Task) => {
-    const checklistFields = {
-      verificado: 'finalizado',
-      planilha: 'finalizado',
-      status: 'finalizado'
-    }
-
-    const { error } = await supabase
-      .from('tasks')
-      .update(checklistFields)
-      .eq('id', task.id)
-
-    if (error) {
-      console.error('Erro ao finalizar todos:', error.message)
-    } else {
-      onUpdate()
-    }
-  }
-
   const confirmDelete = async () => {
     if (!deletingId) return
-    setLoading(true)
     const { error } = await supabase.from('tasks').delete().eq('id', deletingId)
     if (error) {
       console.error('Erro ao excluir:', error.message)
@@ -93,14 +66,12 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
       onUpdate()
       setDeletingId(null)
     }
-    setLoading(false)
   }
 
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingTask) return
     
-    setLoading(true)
     const { error } = await supabase
       .from('tasks')
       .update({
@@ -116,7 +87,6 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
       onUpdate()
       setEditingTask(null)
     }
-    setLoading(false)
   }
 
   const filteredTasks = tasks.filter(t => {
@@ -153,8 +123,8 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
                      </span>
                      <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${
                        task.status === 'pendente' 
-                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
-                        : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 glow-amber' 
+                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 glow-emerald'
                      }`}>
                        {task.status === 'pendente' ? 'Pendente' : 'Finalizada'}
                      </span>
@@ -204,8 +174,7 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
             <span className="text-[10px] uppercase font-black text-[#52525b] tracking-tighter mb-1">PROTOCOLO DE CONCLUSÃO</span>
             <div className="flex flex-col gap-2">
               {[
-                { id: 'verificado', label: 'Verificado' },
-                { id: 'planilha', label: 'Planilha' }
+                { id: 'verificado', label: 'Verificado' }
               ].map((item) => (
                 <button
                   key={item.id}
@@ -231,14 +200,14 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
           <div className="flex lg:flex-col items-center gap-2 lg:justify-start">
             <button 
               onClick={(e) => { e.stopPropagation(); setEditingTask(task); }}
-              className="flex-1 lg:flex-none p-3 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-2xl border border-cyan-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              className="flex-1 lg:flex-none p-3 bg-violet-500/10 text-violet-400 hover:bg-violet-500 hover:text-white rounded-2xl border border-violet-500/20 transition-all hover:shadow-lg hover:shadow-violet-500/20 flex items-center justify-center gap-2 text-xs font-bold"
               title="Editar"
             >
               <Pencil className="w-4 h-4" />
             </button>
             <button 
               onClick={(e) => { e.stopPropagation(); setDeletingId(task.id); }}
-              className="flex-1 lg:flex-none p-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-2xl border border-rose-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              className="flex-1 lg:flex-none p-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-2xl border border-rose-500/20 transition-all hover:shadow-lg hover:shadow-rose-500/20 flex items-center justify-center gap-2 text-xs font-bold"
               title="Excluir"
             >
               <Trash2 className="w-4 h-4" />
@@ -252,7 +221,7 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
   return (
     <div className="flex flex-col gap-8 w-full mt-2">
       {/* Search and Filter Header */}
-      <div className="flex flex-col md:flex-row gap-4 items-end bg-[#18181b] p-6 rounded-3xl border border-white/5 shadow-xl">
+      <div className="flex flex-col md:flex-row gap-4 items-end glass-card-accent p-6 rounded-3xl shadow-xl">
         <div className="flex-1 flex flex-col gap-2 w-full">
           <label className="text-xs font-bold text-[#52525b] ml-1 uppercase tracking-widest">Buscar Solicitações:</label>
           <div className="relative group">
@@ -274,7 +243,7 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
               onClick={() => setStatusFilter('pendente')}
               className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
                 statusFilter === 'pendente' 
-                  ? 'bg-[#18181b] text-white shadow-xl border border-white/5' 
+                  ? 'bg-violet-500/10 text-violet-400 shadow-lg border border-violet-500/20' 
                   : 'text-[#52525b] hover:text-[#a1a1aa]'
               }`}
             >
@@ -298,7 +267,7 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
       <div className="flex flex-col gap-4 min-h-[400px]">
         {filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-[#18181b]/50 rounded-3xl border border-white/5 border-dashed gap-4">
-            <div className="p-4 bg-white/5 rounded-full">
+            <div className="p-4 bg-violet-500/10 rounded-full border border-violet-500/20">
                <AlertCircle className="w-8 h-8 text-[#52525b]" />
             </div>
             <div className="text-center">
@@ -315,7 +284,7 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
         <div className="flex flex-col gap-6">
           <p className="text-[#a1a1aa]">Tem certeza que deseja excluir esta solicitação? Esta ação não pode ser desfeita.</p>
           <div className="flex gap-4">
-            <button onClick={() => setDeletingId(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all">Cancelar</button>
+            <button onClick={() => setDeletingId(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 border border-white/5 transition-all">Cancelar</button>
             <button onClick={confirmDelete} className="flex-1 py-3 rounded-2xl bg-rose-500 text-white font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20">Excluir</button>
           </div>
         </div>
@@ -338,8 +307,8 @@ export default function SolicitationList({ tasks, onUpdate }: { tasks: Task[], o
             </div>
           </div>
           <div className="flex gap-4">
-            <button type="button" onClick={() => setEditingTask(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all">Cancelar</button>
-            <button type="submit" className="flex-1 py-3 rounded-2xl bg-white text-black font-bold hover:bg-[#e4e4e7] transition-all shadow-lg">Salvar Alterações</button>
+            <button type="button" onClick={() => setEditingTask(null)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 border border-white/5 transition-all">Cancelar</button>
+            <button type="submit" className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20">Salvar Alterações</button>
           </div>
         </form>
       </Modal>

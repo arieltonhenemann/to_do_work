@@ -45,7 +45,6 @@ export default function SealRemovalForm({ onTaskAdded }: { onTaskAdded: () => vo
         mk_solutions: 'pendente',
         mapeamento: 'pendente',
         geosite: 'pendente',
-        planilha: 'pendente',
         status: 'pendente'
       }
     ])
@@ -61,7 +60,7 @@ export default function SealRemovalForm({ onTaskAdded }: { onTaskAdded: () => vo
   }
 
   return (
-    <div className="bg-[#18181b] p-8 rounded-[32px] border border-white/5 animate-in fade-in slide-in-from-top-4 duration-500 shadow-xl shadow-black/20">
+    <div className="glass-card-accent p-8 rounded-[32px] animate-in fade-in slide-in-from-top-4 duration-500 shadow-xl shadow-black/20">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-xl font-extrabold flex items-center gap-3 text-white">
           <div className="p-2 bg-white rounded-lg">
@@ -195,7 +194,7 @@ export default function SealRemovalForm({ onTaskAdded }: { onTaskAdded: () => vo
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-white text-black py-4 rounded-2xl font-bold text-sm hover:bg-[#e4e4e7] transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 mt-2 shadow-xl shadow-white/5"
+          className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-4 rounded-2xl font-bold text-sm hover:from-violet-500 hover:to-indigo-500 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 mt-2 shadow-xl shadow-violet-500/20"
         >
           {loading ? <Loader2 className="w-5 h-5 animate-spin text-black" /> : (
             <>

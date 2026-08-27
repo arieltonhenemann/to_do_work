@@ -32,11 +32,10 @@ export default async function RootLayout({
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#030303] flex text-white font-sans selection:bg-white selection:text-black">
-        {/* Background Decorativo Global */}
+      <body className="min-h-full bg-[#030303] flex text-white font-sans selection:bg-violet-500/30 selection:text-white">
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-white/5 blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-white/5 blur-[120px]" />
+          <div className="absolute top-[-15%] left-[-10%] w-[45%] h-[45%] rounded-full bg-violet-600/[0.04] blur-[120px]" />
+          <div className="absolute bottom-[-15%] right-[-10%] w-[45%] h-[45%] rounded-full bg-indigo-600/[0.04] blur-[120px]" />
         </div>
 
         {user && <Sidebar />}
