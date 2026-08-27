@@ -41,7 +41,6 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
   const [statusFilter, setStatusFilter] = useState<'pendente' | 'finalizado'>('pendente')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const [infoTask, setInfoTask] = useState<Task | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -281,11 +280,11 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
               <span className="lg:hidden">Excluir</span>
             </button>
             <button 
-              onClick={(e) => { e.stopPropagation(); setInfoTask(task); }}
+              onClick={(e) => { e.stopPropagation(); copyToClipboard(`LACRE: ${task.lacre || ''} // PON: ${task.cto || ''} // ${task.equipamento || ''}`); }}
               className="flex-1 lg:flex-none p-3 bg-white/5 text-[#52525b] hover:bg-white hover:text-black rounded-2xl border border-white/5 transition-all flex items-center justify-center gap-2 text-xs font-bold"
               title="Copiar"
             >
-              <Clipboard className="w-4 h-4" />
+              {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Clipboard className="w-4 h-4" />}
               <span className="lg:hidden">Copiar</span>
             </button>
           </div>
@@ -480,42 +479,6 @@ export default function InstallationList({ tasks, onUpdate }: { tasks: Task[], o
             </button>
           </div>
         </form>
-      </Modal>
-
-      {/* Pop-up de Informações Rápidas */}
-      <Modal 
-        isOpen={!!infoTask} 
-        onClose={() => setInfoTask(null)} 
-        title="Informações da Instalação"
-      >
-        <div className="flex flex-col gap-6">
-          <div className="bg-white/5 p-6 rounded-2xl border border-white/10 flex flex-col gap-4 text-center">
-            <p className="text-xl font-mono text-white tracking-tight break-all leading-relaxed">
-              {'LACRE: '}{infoTask?.lacre || 'N/A'}{' // PON: '}{infoTask?.cto || 'N/A'}{' // '}{infoTask?.equipamento || 'N/A'}
-            </p>
-          </div>
-          
-          <button
-            onClick={() => copyToClipboard(`LACRE: ${infoTask?.lacre || ''} // PON: ${infoTask?.cto || ''} // ${infoTask?.equipamento || ''}`)}
-            className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
-              copied 
-                ? 'bg-emerald-500 text-white' 
-                : 'bg-white text-black hover:bg-[#e4e4e7]'
-            }`}
-          >
-            {copied ? (
-              <>
-                <Check className="w-5 h-5" />
-                Copiado!
-              </>
-            ) : (
-              <>
-                <Clipboard className="w-5 h-5" />
-                Copiar Informações
-              </>
-            )}
-          </button>
-        </div>
       </Modal>
     </div>
   )

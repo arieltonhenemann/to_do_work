@@ -40,7 +40,6 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
   const [statusFilter, setStatusFilter] = useState<'pendente' | 'finalizado'>('pendente')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const [quickInfoTask, setQuickInfoTask] = useState<Task | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [copied, setCopied] = useState(false)
 
@@ -231,10 +230,10 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
                 </div>
               </div>
               <button 
-                onClick={(e) => { e.stopPropagation(); setQuickInfoTask(task); }}
+                onClick={(e) => { e.stopPropagation(); copyToClipboard(task.lacres_data.map(l => `Cliente: ${l.cliente} - Lacre: ${l.lacre}`).join('\n')); }}
                 className="flex items-center gap-1.5 text-[9px] font-black text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/5 transition-all"
               >
-                <Clipboard className="w-3.5 h-3.5 text-red-500" /> COPIAR LOTE
+                {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Clipboard className="w-3.5 h-3.5 text-red-500" />} {copied ? 'COPIADO!' : 'COPIAR LOTE'}
               </button>
             </div>
           </div>
@@ -411,30 +410,6 @@ export default function SealRemovalList({ tasks, onUpdate }: { tasks: Task[], on
             <button type="submit" className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-500/20">Salvar Lote</button>
           </div>
         </form>
-      </Modal>
-
-      <Modal isOpen={!!quickInfoTask} onClose={() => setQuickInfoTask(null)} title="Copiar Lote">
-        <div className="flex flex-col gap-6">
-          <div className="bg-[#09090b] p-6 rounded-3xl border border-white/5 max-h-[300px] overflow-y-auto">
-             <div className="flex flex-col gap-1 font-mono text-xs text-[#a1a1aa]">
-                {quickInfoTask?.lacres_data.map((l, idx) => (
-                  <div key={l.id}>{idx + 1}. Cliente: {l.cliente} - Lacre: {l.lacre}</div>
-                ))}
-             </div>
-          </div>
-          <button
-            onClick={() => {
-              const text = quickInfoTask?.lacres_data.map(l => `Cliente: ${l.cliente} - Lacre: ${l.lacre}`).join('\n') || ''
-              copyToClipboard(text)
-            }}
-            className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
-              copied ? 'bg-emerald-500 text-white' : 'bg-white text-black hover:bg-[#e4e4e7]'
-            }`}
-          >
-            {copied ? <CheckCircle2 className="w-5 h-5" /> : <Clipboard className="w-5 h-5" />}
-            {copied ? 'COPIADO COM SUCESSO!' : 'COPIAR LISTA PARA CLIPBOARD'}
-          </button>
-        </div>
       </Modal>
     </div>
   )
