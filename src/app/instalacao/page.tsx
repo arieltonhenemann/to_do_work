@@ -7,7 +7,8 @@ import InstallationList from '@/components/installation-list'
 import { PlusCircle, Loader2 } from 'lucide-react'
 
 export default function InstallationPage() {
-  const [tasks, setTasks] = useState<Record<string, unknown>[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 

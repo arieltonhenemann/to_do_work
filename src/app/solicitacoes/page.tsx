@@ -7,7 +7,8 @@ import SolicitationList from '@/components/solicitation-list'
 import { ClipboardCheck, Loader2 } from 'lucide-react'
 
 export default function SolicitationPage() {
-  const [tasks, setTasks] = useState<Record<string, unknown>[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 

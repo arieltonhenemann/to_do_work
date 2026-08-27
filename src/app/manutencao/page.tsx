@@ -7,7 +7,8 @@ import MaintenanceList from '@/components/maintenance-list'
 import { Wrench, Loader2 } from 'lucide-react'
 
 export default function MaintenancePage() {
-  const [tasks, setTasks] = useState<Record<string, unknown>[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
